@@ -224,7 +224,7 @@ else
 	CC1FLAGS += -Wstrict-overflow=1
 	ifeq ($(PLATFORM),sdl)
 		CC1FLAGS += -Wno-parentheses-equality -Wno-unused-value
-		CPPFLAGS += -D TITLE_BAR=$(BUILD_NAME).$(PLATFORM) -D PLATFORM_GBA=0 -D PLATFORM_SDL=1 -D PLATFORM_WIN32=0 $(shell sdl2-config --cflags)
+		CPPFLAGS += -D TITLE_BAR=$(BUILD_NAME).$(PLATFORM) -D PLATFORM_GBA=0 -D PLATFORM_SDL=1 -D PLATFORM_WIN32=0 $(shell sdl2-config --cflags) -I/usr/include/iniparser
 	else ifeq ($(PLATFORM),sdl_win32)
 		CPPFLAGS += -D TITLE_BAR=$(BUILD_NAME).$(PLATFORM) -D PLATFORM_GBA=0 -D PLATFORM_SDL=1 -D PLATFORM_WIN32=0 $(SDL_MINGW_FLAGS)
 	else ifeq ($(PLATFORM),win32)
@@ -306,7 +306,7 @@ endif
 ifeq ($(PLATFORM),gba)
     LIBS := $(ROOT_DIR)/tools/agbcc/lib/libgcc.a $(ROOT_DIR)/tools/agbcc/lib/libc.a $(LIBABGSYSCALL_LIBS)
 else ifeq ($(PLATFORM),sdl)
-    LIBS := $(shell sdl2-config --cflags --libs)
+    LIBS := $(shell sdl2-config --cflags --libs) -liniparser
 else ifeq ($(PLATFORM),sdl_win32)
     LIBS := -mwin32 -lkernel32 -lwinmm -lmingw32 -lxinput $(SDL_MINGW_LIBS)
 else ifeq ($(PLATFORM), win32)

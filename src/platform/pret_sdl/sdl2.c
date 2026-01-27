@@ -11,6 +11,7 @@
 #endif
 
 #include <SDL.h>
+#include <iniparser.h>
 
 #include "global.h"
 #include "core.h"
@@ -50,12 +51,13 @@ extern uint8_t VRAM[VRAM_SIZE];
 extern uint8_t OAM[OAM_SIZE];
 extern uint8_t FLASH_BASE[FLASH_ROM_SIZE_1M * SECTORS_PER_BANK];
 ALIGNED(256) uint16_t gameImage[DISPLAY_WIDTH * DISPLAY_HEIGHT];
-#if ENABLE_VRAM_VIEW
+
 #define VRAM_VIEW_WIDTH  (32 * TILE_WIDTH)
 #define VRAM_VIEW_HEIGHT (((VRAM_SIZE / TILE_SIZE_4BPP) / 32) * TILE_WIDTH)
 uint16_t vramBuffer[VRAM_VIEW_WIDTH * VRAM_VIEW_HEIGHT];
 uint8_t vramPalIdBuffer[(VRAM_VIEW_WIDTH / TILE_WIDTH) * (VRAM_VIEW_HEIGHT / TILE_WIDTH)];
-#endif
+
+#define CONFIG_FILENAME "sa2.ini"
 
 struct scanlineData {
     uint16_t layers[4][DISPLAY_WIDTH];
@@ -76,11 +78,9 @@ struct bgPriority {
 SDL_Window *sdlWindow;
 SDL_Renderer *sdlRenderer;
 SDL_Texture *sdlTexture;
-#if ENABLE_VRAM_VIEW
 SDL_Window *vramWindow;
 SDL_Renderer *vramRenderer;
 SDL_Texture *vramTexture;
-#endif
 #define INITIAL_VIDEO_SCALE 1
 unsigned int videoScale = INITIAL_VIDEO_SCALE;
 unsigned int preFullscreenVideoScale = INITIAL_VIDEO_SCALE;
@@ -91,6 +91,7 @@ bool isRunning = true;
 bool paused = false;
 bool stepOneFrame = false;
 bool headless = false;
+int enableVRAMView = 0;
 
 double lastGameTime = 0;
 double curGameTime = 0;
@@ -120,15 +121,51 @@ void *Platform_malloc(size_t numBytes) { return HeapAlloc(GetProcessHeap(), HEAP
 void Platform_free(void *ptr) { HeapFree(GetProcessHeap(), 0, ptr); }
 #endif
 
+void LoadConfig(void)
+{
+  FILE* f;
+  dictionary* iniFile;
+
+  f = fopen(CONFIG_FILENAME, "r");
+
+  if (!f) {
+    f = fopen(CONFIG_FILENAME, "w");
+    fclose(f);
+
+    iniFile = iniparser_load(CONFIG_FILENAME);
+
+    iniparser_set(iniFile, "Game", NULL);
+    iniparser_set(iniFile, "Game:ScreenWidth", "424");
+    iniparser_set(iniFile, "Game:ScreenHeight", "240");
+
+    iniparser_set(iniFile, "Debug", NULL);
+    iniparser_set(iniFile, "Debug:EnableVramView", "0");
+
+    FILE* f = fopen(CONFIG_FILENAME, "w");
+    iniparser_dump_ini(iniFile, f);
+    fclose(f);
+
+    return;
+  }
+
+  fclose(f);
+  iniFile = iniparser_load(CONFIG_FILENAME);
+
+  enableVRAMView = iniparser_getint(iniFile, "Debug:EnableVramView", 0);
+}
+
 int main(int argc, char **argv)
 {
     const char *headlessEnv = getenv("HEADLESS");
+    u16 vramWindowWidth, vramWindowHeight;
 
     if (headlessEnv && strcmp(headlessEnv, "true") == 0) {
         headless = true;
     }
 
     const char *parentEnv = getenv("SIO_PARENT");
+  
+    LoadConfig();
 
     if (parentEnv && strcmp(parentEnv, "true") == 0) {
         SIO_MULTI_CNT->id = 0;
@@ -175,21 +212,21 @@ int main(int argc, char **argv)
         return 1;
     }
 
-#if ENABLE_VRAM_VIEW
-    int mainWindowX;
-    int mainWindowWidth;
-    SDL_GetWindowPosition(sdlWindow, &mainWindowX, NULL);
-    SDL_GetWindowSize(sdlWindow, &mainWindowWidth, NULL);
-    int vramWindowX = mainWindowX + mainWindowWidth;
-    u16 vramWindowWidth = VRAM_VIEW_WIDTH;
-    u16 vramWindowHeight = VRAM_VIEW_HEIGHT;
-    vramWindow = SDL_CreateWindow("VRAM View", vramWindowX, SDL_WINDOWPOS_CENTERED, vramWindowWidth, vramWindowHeight,
-                                  SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
-    if (vramWindow == NULL) {
-        fprintf(stderr, "VRAM Window could not be created! SDL_Error: %s\n", SDL_GetError());
-        return 1;
+    if (enableVRAMView) {
+        int mainWindowX;
+        int mainWindowWidth;
+        SDL_GetWindowPosition(sdlWindow, &mainWindowX, NULL);
+        SDL_GetWindowSize(sdlWindow, &mainWindowWidth, NULL);
+        int vramWindowX = mainWindowX + mainWindowWidth;
+        vramWindowWidth = VRAM_VIEW_WIDTH;
+        vramWindowHeight = VRAM_VIEW_HEIGHT;
+        vramWindow = SDL_CreateWindow("VRAM View", vramWindowX, SDL_WINDOWPOS_CENTERED, vramWindowWidth, vramWindowHeight,
+                                      SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+        if (vramWindow == NULL) {
+            fprintf(stderr, "VRAM Window could not be created! SDL_Error: %s\n", SDL_GetError());
+            return 1;
+        }
     }
-#endif
 
     sdlRenderer = SDL_CreateRenderer(sdlWindow, -1, SDL_RENDERER_PRESENTVSYNC);
     if (sdlRenderer == NULL) {
@@ -197,23 +234,23 @@ int main(int argc, char **argv)
         return 1;
     }
 
-#if ENABLE_VRAM_VIEW
-    vramRenderer = SDL_CreateRenderer(vramWindow, -1, SDL_RENDERER_PRESENTVSYNC);
-    if (vramRenderer == NULL) {
-        fprintf(stderr, "VRAM Renderer could not be created! SDL_Error: %s\n", SDL_GetError());
-        return 1;
+    if (enableVRAMView) {
+        vramRenderer = SDL_CreateRenderer(vramWindow, -1, SDL_RENDERER_PRESENTVSYNC);
+        if (vramRenderer == NULL) {
+            fprintf(stderr, "VRAM Renderer could not be created! SDL_Error: %s\n", SDL_GetError());
+            return 1;
+        }
     }
-#endif
 
     SDL_SetRenderDrawColor(sdlRenderer, 0, 0, 0, 255);
     SDL_RenderClear(sdlRenderer);
     SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "0");
     SDL_RenderSetLogicalSize(sdlRenderer, DISPLAY_WIDTH, DISPLAY_HEIGHT);
-#if ENABLE_VRAM_VIEW
-    SDL_SetRenderDrawColor(vramRenderer, 0, 0, 0, 255);
-    SDL_RenderClear(vramRenderer);
-    SDL_RenderSetLogicalSize(vramRenderer, vramWindowWidth, vramWindowHeight);
-#endif
+    if (enableVRAMView) {
+        SDL_SetRenderDrawColor(vramRenderer, 0, 0, 0, 255);
+        SDL_RenderClear(vramRenderer);
+        SDL_RenderSetLogicalSize(vramRenderer, vramWindowWidth, vramWindowHeight);
+    }
 
     sdlTexture = SDL_CreateTexture(sdlRenderer, SDL_PIXELFORMAT_ABGR1555, SDL_TEXTUREACCESS_STREAMING, DISPLAY_WIDTH, DISPLAY_HEIGHT);
     if (sdlTexture == NULL) {
@@ -221,13 +258,13 @@ int main(int argc, char **argv)
         return 1;
     }
 
-#if ENABLE_VRAM_VIEW
-    vramTexture = SDL_CreateTexture(vramRenderer, SDL_PIXELFORMAT_ABGR1555, SDL_TEXTUREACCESS_STREAMING, vramWindowWidth, vramWindowHeight);
-    if (vramTexture == NULL) {
-        fprintf(stderr, "Texture could not be created! SDL_Error: %s\n", SDL_GetError());
-        return 1;
+    if (enableVRAMView) {
+        vramTexture = SDL_CreateTexture(vramRenderer, SDL_PIXELFORMAT_ABGR1555, SDL_TEXTUREACCESS_STREAMING, vramWindowWidth, vramWindowHeight);
+        if (vramTexture == NULL) {
+            fprintf(stderr, "Texture could not be created! SDL_Error: %s\n", SDL_GetError());
+            return 1;
+        }
     }
-#endif
 
 #if ENABLE_AUDIO
     SDL_AudioSpec want;
@@ -249,9 +286,8 @@ int main(int argc, char **argv)
 #endif
 
     VDraw(sdlTexture);
-#if ENABLE_VRAM_VIEW
-    VramDraw(vramTexture);
-#endif
+    if (enableVRAMView) 
+        VramDraw(vramTexture);
     AgbMain();
 
     return 0;
@@ -332,20 +368,20 @@ void VBlankIntrWait(void)
         SDL_RenderClear(sdlRenderer);
         SDL_RenderCopy(sdlRenderer, sdlTexture, NULL, NULL);
 
-#if ENABLE_VRAM_VIEW
-        VramDraw(vramTexture);
-        SDL_RenderClear(vramRenderer);
-        SDL_RenderCopy(vramRenderer, vramTexture, NULL, NULL);
-#endif
+        if (enableVRAMView) {
+            VramDraw(vramTexture);
+            SDL_RenderClear(vramRenderer);
+            SDL_RenderCopy(vramRenderer, vramTexture, NULL, NULL);
+        }
+
         if (videoScaleChanged) {
             SDL_SetWindowSize(sdlWindow, DISPLAY_WIDTH * videoScale, DISPLAY_HEIGHT * videoScale);
             videoScaleChanged = false;
         }
 
         SDL_RenderPresent(sdlRenderer);
-#if ENABLE_VRAM_VIEW
-        SDL_RenderPresent(vramRenderer);
-#endif
+        if (enableVRAMView)
+            SDL_RenderPresent(vramRenderer);
     }
 
     CloseSaveFile();
@@ -1022,9 +1058,8 @@ static void RenderBGScanline(int bgNum, uint16_t control, uint16_t hoffs, uint16
         unsigned int tileNum = entry & 0x3FF;
         unsigned int paletteNum = (entry >> 12) & 0xF;
 
-#if ENABLE_VRAM_VIEW
-        vramPalIdBuffer[tileNum] = paletteNum;
-#endif
+        if (enableVRAMView)
+            vramPalIdBuffer[tileNum] = paletteNum;
 
         // Get the coordinate within the specific tile
         unsigned int tileX = xx % TILE_WIDTH;
@@ -1520,9 +1555,9 @@ static void DrawOamSprites(struct scanlineData *scanline, uint16_t vcount, bool 
                     else
                         pixel &= 0xF;
                     palette += oam->split.paletteNum * 16;
-#if ENABLE_VRAM_VIEW
-                    vramPalIdBuffer[0x800 + (tileDataIndex / 32)] = 16 + oam->split.paletteNum;
-#endif
+
+                    if (enableVRAMView)
+                        vramPalIdBuffer[0x800 + (tileDataIndex / 32)] = 16 + oam->split.paletteNum;
                 } else {
                     pixel = tiledata[(block_offset * 2 + oam->split.tileNum) * 32 + (tile_y * 8) + tile_x];
                 }
@@ -1807,7 +1842,6 @@ static void DrawFrame(uint16_t *pixels)
     }
 }
 
-#if ENABLE_VRAM_VIEW
 void DrawVramView(Uint16 *buffer)
 {
     for (int y = 0; y < VRAM_VIEW_HEIGHT / TILE_WIDTH; y++) {
@@ -1841,7 +1875,6 @@ void VramDraw(SDL_Texture *texture)
     DrawVramView(vramBuffer);
     SDL_UpdateTexture(texture, NULL, vramBuffer, VRAM_VIEW_WIDTH * sizeof(Uint16));
 }
-#endif
 
 void VDraw(SDL_Texture *texture)
 {
