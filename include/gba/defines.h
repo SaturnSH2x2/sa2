@@ -39,8 +39,11 @@
 #define OAM_ENTRY_COUNT 128
 #if PORTABLE
 // NOTE: Used in gba/types.h, so they have to be defined before the #include
-#define DISPLAY_WIDTH  426
-#define DISPLAY_HEIGHT 240
+#define DISPLAY_WIDTH  480
+#define DISPLAY_HEIGHT 270
+
+extern uint16_t configDisplayWidth;
+extern uint16_t configDisplayHeight;
 
 // NOTE: We shouldn't consider WIDESCREEN_HACK a permanent thing.
 //       This hack should best be removed once there's a "native" platform layer.

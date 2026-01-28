@@ -154,7 +154,11 @@ struct Task *CreateStageUI(void)
     if (IS_SINGLE_PLAYER) {
         s = &ui->playerIcon;
         s->x = 6;
+#if PORTABLE
+        s->y = configDisplayHeight - 18;
+#else
         s->y = DISPLAY_HEIGHT - 18;
+#endif
 
         s->graphics.dest = VramMalloc(sAnims1UpIcons[gSelectedCharacter][0]);
 
@@ -316,7 +320,11 @@ void Task_StageUIMain(void)
             if (oam != (OamData *)iwram_end)
 #endif
             {
+#if PORTABLE
+                UI_OAM_SET(oam, 6, configDisplayHeight - 18, SPRITE_SHAPE(16x16), SPRITE_SIZE(16x16), ui->playerIconTileData);
+#else
                 UI_OAM_SET(oam, 6, DISPLAY_HEIGHT - 18, SPRITE_SHAPE(16x16), SPRITE_SIZE(16x16), ui->playerIconTileData);
+#endif
             }
 
             if (gNumLives > 0)
@@ -334,7 +342,11 @@ void Task_StageUIMain(void)
             if (oam != (OamData *)iwram_end)
 #endif
             {
+#if PORTABLE
+                UI_OAM_SET(oam, 30, (configDisplayHeight - 20), SPRITE_SHAPE(8x16), SPRITE_SIZE(8x16), ui->digitsTileData[i]);
+#else
                 UI_OAM_SET(oam, 30, (DISPLAY_HEIGHT - 20), SPRITE_SHAPE(8x16), SPRITE_SIZE(8x16), ui->digitsTileData[i]);
+#endif
             }
         }
 
@@ -441,8 +453,18 @@ void Task_StageUIMain(void)
             if (oam != (OamData *)iwram_end)
 #endif
             {
+#if PORTABLE
+                if (configDisplayWidth < 240) {
+                  UI_OAM_SET(oam, (configDisplayWidth - 30) - 21, 0, SPRITE_SHAPE(8x16), SPRITE_SIZE(8x16),
+                             (ui->digitsTileData[UI_ASCII_COLON] | palId));
+                } else {
+                  UI_OAM_SET(oam, (configDisplayWidth / 2) - 21, 0, SPRITE_SHAPE(8x16), SPRITE_SIZE(8x16),
+                             (ui->digitsTileData[UI_ASCII_COLON] | palId));
+                }
+#else
                 UI_OAM_SET(oam, (DISPLAY_WIDTH / 2) - 21, 0, SPRITE_SHAPE(8x16), SPRITE_SIZE(8x16),
                            (ui->digitsTileData[UI_ASCII_COLON] | palId));
+#endif
             }
 
             oam = OamMalloc(3);
@@ -451,8 +473,18 @@ void Task_StageUIMain(void)
             if (oam != (OamData *)iwram_end)
 #endif
             {
+#if PORTABLE
+                if (configDisplayWidth < 240) {
+                  UI_OAM_SET(oam, (configDisplayWidth - 30) + 3, 0, SPRITE_SHAPE(8x16), SPRITE_SIZE(8x16),
+                           (ui->digitsTileData[UI_ASCII_COLON] | palId));
+                } else {
+                  UI_OAM_SET(oam, (configDisplayWidth / 2) + 3, 0, SPRITE_SHAPE(8x16), SPRITE_SIZE(8x16),
+                           (ui->digitsTileData[UI_ASCII_COLON] | palId));
+                }
+#else
                 UI_OAM_SET(oam, (DISPLAY_WIDTH / 2) + 3, 0, SPRITE_SHAPE(8x16), SPRITE_SIZE(8x16),
                            (ui->digitsTileData[UI_ASCII_COLON] | palId));
+#endif
             }
 
             seconds = Div(time, GBA_FRAMES_PER_SECOND);
@@ -471,35 +503,70 @@ void Task_StageUIMain(void)
 
             // Milliseconds-L
             sd = &digits[gMillisUnpackTable[r5][0]];
+#if PORTABLE
+            if (configDisplayWidth < 240)
+              sd->x = ((configDisplayWidth - 30) + 16) + 0 * 8;
+            else
+              sd->x = ((configDisplayWidth / 2) + 16) + 0 * 8;
+#else
             sd->x = ((DISPLAY_WIDTH / 2) + 16) + 0 * 8;
+#endif
             sd->y = 16;
             sd->palId = palId;
             DisplaySprite(sd);
 
             // Milliseconds-R
             sd = &digits[gMillisUnpackTable[r5][1]];
+#if PORTABLE
+            if (configDisplayWidth < 240)
+              sd->x = ((configDisplayWidth - 30) + 16) + 1 * 8;
+            else
+              sd->x = ((configDisplayWidth  / 2) + 16) + 1 * 8;
+#else
             sd->x = ((DISPLAY_WIDTH / 2) + 16) + 1 * 8;
+#endif
             sd->y = 16;
             sd->palId = palId;
             DisplaySprite(sd);
 
             // Seconds-L
             sd = &digits[gSecondsTable[seconds][0]];
+#if PORTABLE
+            if (configDisplayWidth < 240)
+              sd->x = ((configDisplayWidth - 30) - 8) + 0 * 8;
+            else
+              sd->x = ((configDisplayWidth / 2) - 8) + 0 * 8;
+#else
             sd->x = ((DISPLAY_WIDTH / 2) - 8) + 0 * 8;
+#endif
             sd->y = 16;
             sd->palId = palId;
             DisplaySprite(sd);
 
             // Seconds-R
             sd = &digits[gSecondsTable[seconds][1]];
+#if PORTABLE
+            if (configDisplayWidth < 240)
+              sd->x = ((configDisplayWidth - 30) - 8) + 1 * 8;
+            else
+              sd->x = ((configDisplayWidth / 2) - 8) + 1 * 8;
+#else
             sd->x = ((DISPLAY_WIDTH / 2) - 8) + 1 * 8;
+#endif
             sd->y = 16;
             sd->palId = palId;
             DisplaySprite(sd);
 
             // Minutes
             sd = &digits[minutes];
+#if PORTABLE
+            if (configDisplayWidth < 240)
+              sd->x = (configDisplayWidth - 30) - 24;
+            else
+              sd->x = (configDisplayWidth / 2) - 24;
+#else
             sd->x = (DISPLAY_WIDTH / 2) - 24;
+#endif
             sd->y = 16;
             sd->palId = palId;
             DisplaySprite(sd);

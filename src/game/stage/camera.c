@@ -504,7 +504,11 @@ void InitCamera(u32 level)
             gBossCameraClampYLower = gBossCameraYClamps[ZONE_FINAL + 1][0];
             gBossCameraClampYUpper = gBossCameraYClamps[ZONE_FINAL + 1][1];
             camera->x = 600;
+#if PORTABLE
+            camera->unk10 = (configDisplayWidth / 2);
+#else
             camera->unk10 = (DISPLAY_WIDTH / 2);
+#endif
             camera->unk14 = 0;
             camera->y = 0;
             camera->unk64 = -4;
@@ -514,15 +518,25 @@ void InitCamera(u32 level)
             // for now we use the original GBA values as otherwise the boss
             // goes off the screen (not sure why yet)
             camera->unk10 = I(player->qWorldX) - (2 * 240);
+#if PORTABLE
+            camera->y = I(player->qWorldY) - ((configDisplayHeight / 2) + 4);
+#else
             camera->y = I(player->qWorldY) - ((DISPLAY_HEIGHT / 2) + 4);
+#endif
             camera->unk14 = camera->y;
             camera->unk64 = player->spriteOffsetY - 4;
         }
     } else
 #endif
     {
+
+#if PORTABLE
+        camera->x = I(player->qWorldX) - (configDisplayWidth / 2);
+        camera->y = I(player->qWorldY) - ((configDisplayHeight / 2) + 4);
+#else
         camera->x = I(player->qWorldX) - (DISPLAY_WIDTH / 2);
         camera->y = I(player->qWorldY) - ((DISPLAY_HEIGHT / 2) + 4);
+#endif
 
         if (camera->x < 0) {
             camera->x = 0;
@@ -564,8 +578,13 @@ void InitCamera(u32 level)
 }
 
 // Only need to use the original value for these zones
+#if PORTABLE
+#define DISPLAY_WIDTH_FOR_BOSS_TAS                                                                                                         \
+    ((LEVEL_TO_ZONE(gCurrentLevel) == ZONE_2 || LEVEL_TO_ZONE(gCurrentLevel) == ZONE_6) ? (240 / 2) : (configDisplayWidth / 2))
+#else
 #define DISPLAY_WIDTH_FOR_BOSS_TAS                                                                                                         \
     ((LEVEL_TO_ZONE(gCurrentLevel) == ZONE_2 || LEVEL_TO_ZONE(gCurrentLevel) == ZONE_6) ? (240 / 2) : (DISPLAY_WIDTH / 2))
+#endif
 
 void UpdateCamera(void)
 {
@@ -577,8 +596,13 @@ void UpdateCamera(void)
     camera->dx = camera->x;
     camera->dy = camera->y;
 
+#if PORTABLE
+    newX = CLAMP(newX, camera->minX, camera->maxX - (configDisplayWidth + 1));
+    newY = CLAMP(newY, camera->minY, camera->maxY - (configDisplayHeight + 1));
+#else
     newX = CLAMP(newX, camera->minX, camera->maxX - (DISPLAY_WIDTH + 1));
     newY = CLAMP(newY, camera->minY, camera->maxY - (DISPLAY_HEIGHT + 1));
+#endif
 
 #ifndef COLLECT_RINGS_ROM
     if (IS_BOSS_STAGE(gCurrentLevel)) {
@@ -603,7 +627,13 @@ void UpdateCamera(void)
 // So we need to emulate that behaviour on some specific
 // levels
 #if TAS_TESTING && TAS_TESTING_WIDESCREEN_HACK && DISPLAY_WIDTH > 240
-        if (newX + (DISPLAY_WIDTH_FOR_BOSS_TAS + 1) < I(player->qWorldX)) {
+        int bossTASCheck;
+        if (configDisplayWidth > 240)
+            bossTASCheck = DISPLAY_WIDTH_FOR_BOSS_TAS + 1;
+        else
+            bossTASCheck = ((configDisplayWidth / 2) + 1);
+
+        if (newX + bossTASCheck < I(player->qWorldX)) {
 #else
         if (newX + ((DISPLAY_WIDTH / 2) + 1) < I(player->qWorldX)) {
 #endif
@@ -616,7 +646,11 @@ void UpdateCamera(void)
 #endif
                 camera->shiftX = playerScreenX - newX;
             } else {
+#if PORTABLE
+                newX = (camera->unk10 + (configDisplayHeight / 2));
+#else
                 newX = (camera->unk10 + (DISPLAY_HEIGHT / 2));
+#endif
                 camera->shiftX = 0;
             }
         } else {
@@ -651,7 +685,12 @@ void UpdateCamera(void)
                 newY += 2;
             }
         }
+
+#if PORTABLE
+        newY = CLAMP(newY, gBossCameraClampYLower, gBossCameraClampYUpper - configDisplayHeight);
+#else
         newY = CLAMP(newY, gBossCameraClampYLower, gBossCameraClampYUpper - DISPLAY_HEIGHT);
+#endif
 
         newX = newX + camera->shiftX;
         newY = newY + camera->shiftY;
@@ -666,7 +705,11 @@ void UpdateCamera(void)
         } else {
             if (!(camera->unk50 & 1)) {
                 s16 airSpeedX = player->qSpeedAirX;
+#if PORTABLE
+                camera->unk10 = I(player->qWorldX) + camera->shiftX - (configDisplayWidth / 2);
+#else
                 camera->unk10 = I(player->qWorldX) + camera->shiftX - (DISPLAY_WIDTH / 2);
+#endif
                 camera->unk56 = (airSpeedX + (camera->unk56 * 15)) >> 4;
                 camera->unk10 += (camera->unk56 >> 5);
             }
@@ -692,7 +735,11 @@ void UpdateCamera(void)
                     camera->unk64 = unk64;
                 }
 
+#if PORTABLE
+                camera->unk14 = I(player->qWorldY) + camera->shiftY - (configDisplayHeight / 2) + camera->unk4C + unk64;
+#else
                 camera->unk14 = I(player->qWorldY) + camera->shiftY - (DISPLAY_HEIGHT / 2) + camera->unk4C + unk64;
+#endif
             }
         }
 
@@ -713,7 +760,11 @@ void UpdateCamera(void)
             newX += temp2;
         }
 
+#if PORTABLE
+        newX = CLAMP(newX, camera->minX, camera->maxX - configDisplayWidth);
+#else
         newX = CLAMP(newX, camera->minX, camera->maxX - DISPLAY_WIDTH);
+#endif
 
         if (camera->unk8 < Q(16)) {
             camera->unk8 += Q(0.125);
@@ -733,11 +784,19 @@ void UpdateCamera(void)
             newY += (-camera->unkC < (camera->unk14 - newY) + camera->unk48) ? (camera->unk14 - newY) + camera->unk48 : -camera->unkC;
         }
 
+#if PORTABLE
+        newY = CLAMP(newY, camera->minY, camera->maxY - configDisplayHeight);
+
+        // maybe a macro, these values are already clamped
+        newX = CLAMP(newX, camera->minX, camera->maxX - configDisplayWidth);
+        newY = CLAMP(newY, camera->minY, camera->maxY - configDisplayHeight);
+#else
         newY = CLAMP(newY, camera->minY, camera->maxY - DISPLAY_HEIGHT);
 
         // maybe a macro, these values are already clamped
         newX = CLAMP(newX, camera->minX, camera->maxX - DISPLAY_WIDTH);
         newY = CLAMP(newY, camera->minY, camera->maxY - DISPLAY_HEIGHT);
+#endif
         newX = newX + camera->shakeOffsetX;
         newY = newY + camera->shakeOffsetY;
     }
@@ -947,7 +1006,11 @@ NONMATCH("asm/non_matching/game/stage/background/StageBgUpdate_Zone2Acts12.inc",
         dt = gStageTime * 0x18;
 
         // Sky and Clouds
+#if PORTABLE
+        for (i = 0; i < configDisplayHeight - 1; i++) {
+#else
         for (i = 0; i < DISPLAY_HEIGHT - 1; i++) {
+#endif
             if ((u32)((camFracY + i) - 111) < 10) {
                 camFracX = ((((camFracY + i) - 110) * cameraX) >> 5) & 0xFF;
             } else {
@@ -962,7 +1025,11 @@ NONMATCH("asm/non_matching/game/stage/background/StageBgUpdate_Zone2Acts12.inc",
 
         // Red Bottom
         something = (cameraX >> 3);
+#if PORTABLE
+        for (j = 0; i < configDisplayHeight - 1; i++, j++) {
+#else
         for (j = 0; i < DISPLAY_HEIGHT - 1; i++, j++) {
+#endif
             u16 cursorX, cursorY;
 
             x0 += 8;
@@ -1159,7 +1226,11 @@ void StageBgUpdate_Zone3Acts12(s32 cameraX, s32 cameraY)
 
         cursorStack = &sp[sl];
         cursor = (u8 *)gUnknown_080D5B20[sl];
+#if PORTABLE
+        for (i = 0; (u8)i < configDisplayHeight - 1; sp40++, i++) {
+#else
         for (i = 0; (u8)i < DISPLAY_HEIGHT - 1; sp40++, i++) {
+#endif
             *bgBuffer = cursorStack->y;
             bgBuffer++;
 
@@ -1229,10 +1300,17 @@ void StageBgUpdate_Zone4Acts12(s32 cameraX, s32 cameraY)
     if (IS_SINGLE_PLAYER && !(gStageFlags & STAGE_FLAG__100)) {
         gWinRegs[WINREG_WINOUT] = 0x3e;
         gWinRegs[WINREG_WININ] = 0x3f3f;
+#if PORTABLE
+        gWinRegs[WINREG_WIN0H] = WIN_RANGE(0, configDisplayWidth);
+        gWinRegs[WINREG_WIN0V] = WIN_RANGE(0, configDisplayHeight);
+        gWinRegs[WINREG_WIN1H] = WIN_RANGE(0, configDisplayWidth);
+        gWinRegs[WINREG_WIN1V] = WIN_RANGE(0, configDisplayHeight);
+#else
         gWinRegs[WINREG_WIN0H] = WIN_RANGE(0, DISPLAY_WIDTH);
         gWinRegs[WINREG_WIN0V] = WIN_RANGE(0, DISPLAY_HEIGHT);
         gWinRegs[WINREG_WIN1H] = WIN_RANGE(0, DISPLAY_WIDTH);
         gWinRegs[WINREG_WIN1V] = WIN_RANGE(0, DISPLAY_HEIGHT);
+#endif
         gBldRegs.bldY = 7;
         gBldRegs.bldCnt = 0x3f41;
         gBldRegs.bldAlpha = 0xc0c;
@@ -1275,7 +1353,11 @@ void CreateStageBg_Zone5(void)
     }
 
     gBgScrollRegs[0][0] = 0;
+#if PORTABLE
+    gBgScrollRegs[0][1] = 160 - configDisplayHeight;
+#else
     gBgScrollRegs[0][1] = 160 - DISPLAY_HEIGHT;
+#endif
     gBgScrollRegs[3][0] = 0;
     gBgScrollRegs[3][1] = 0;
 }
@@ -1318,10 +1400,17 @@ void StageBgUpdate_Zone5Acts12(s32 UNUSED cameraX, s32 UNUSED cameraY)
             gDispCnt |= DISPCNT_WIN0_ON;
             gWinRegs[WINREG_WINOUT] = WINOUT_WIN01_ALL;
             gWinRegs[WINREG_WININ] = (WININ_WIN0_ALL | WININ_WIN1_ALL);
+#if PORTABLE
             gWinRegs[WINREG_WIN0H] = WIN_RANGE(0, DISPLAY_WIDTH);
             gWinRegs[WINREG_WIN0V] = WIN_RANGE(0, DISPLAY_HEIGHT);
             gWinRegs[WINREG_WIN1H] = WIN_RANGE(0, DISPLAY_WIDTH);
             gWinRegs[WINREG_WIN1V] = WIN_RANGE(0, DISPLAY_HEIGHT);
+#else
+            gWinRegs[WINREG_WIN0H] = WIN_RANGE(0, DISPLAY_WIDTH);
+            gWinRegs[WINREG_WIN0V] = WIN_RANGE(0, DISPLAY_HEIGHT);
+            gWinRegs[WINREG_WIN1H] = WIN_RANGE(0, DISPLAY_WIDTH);
+            gWinRegs[WINREG_WIN1V] = WIN_RANGE(0, DISPLAY_HEIGHT);
+#endif
             gBldRegs.bldY = 7;
             gBldRegs.bldCnt = (BLDCNT_TGT2_ALL | BLDCNT_EFFECT_BLEND | BLDCNT_TGT1_BG0);
             gBldRegs.bldAlpha = BLDALPHA_BLEND(16, 16);
@@ -1371,8 +1460,14 @@ void StageBgUpdate_Zone5Acts12(s32 UNUSED cameraX, s32 UNUSED cameraY)
         // NOTE: Temporary solution to render the bottom of the background in a decent looking way
         gHBlankCopySize = 2 * sizeof(u16);
 
+#if PORTABLE
+        for (i = 0; i < configDisplayHeight - 1; i++) {
+            s32 originalLine = (s32)(((float)i / (float)configDisplayHeight) * 160.0f);
+#else
         for (i = 0; i < DISPLAY_HEIGHT - 1; i++) {
             s32 originalLine = (s32)(((float)i / (float)DISPLAY_HEIGHT) * 160.0f);
+#endif
+
 
             if (originalLine > 159) {
                 originalLine = 159;
@@ -1535,11 +1630,20 @@ NONMATCH("asm/non_matching/game/stage/background/sub_801D24C.inc", void sub_801D
     // p1 *= 2.5
 
     p1_2 = p1;
+
+#if PORTABLE
+    r6 = (configDisplayWidth - 1) - ((p1_2 * 2) + (p1_2 >> 1));
+
+    if (r6 > (configDisplayHeight - 1)) {
+        r6 = (configDisplayHeight - 1);
+    }
+#else
     r6 = (DISPLAY_HEIGHT - 1) - ((p1_2 * 2) + (p1_2 >> 1));
 
     if (r6 > (DISPLAY_HEIGHT - 1)) {
         r6 = (DISPLAY_HEIGHT - 1);
     }
+#endif
 
     if (p2 != 0) {
         s16 r2;
@@ -1552,7 +1656,11 @@ NONMATCH("asm/non_matching/game/stage/background/sub_801D24C.inc", void sub_801D
         }
         // _0801D312
 
+#if PORTABLE
+        while (r4 < (configDisplayHeight - 1)) {
+#else
         while (r4 < (DISPLAY_HEIGHT - 1)) {
+#endif
             // _0801D31C
             s32 sin = SIN_24_8(CLAMP_SIN_PERIOD(r4 * 16 + stageTime2 + stageTime)) >> 1;
             sin++;
@@ -1592,7 +1700,11 @@ NONMATCH("asm/non_matching/game/stage/background/sub_801D24C.inc", void sub_801D
 
         // _0801D44C
 
+#if PORTABLE
+        while (r4 < (configDisplayHeight - 1)) {
+#else
         while (r4 < (DISPLAY_HEIGHT - 1)) {
+#endif
             *hOffsets++ = 0;
 
             if ((r4 - 15) < r6) {
@@ -1935,7 +2047,11 @@ NONMATCH("asm/non_matching/game/stage/background/Zone7BgUpdate_Inside.inc", void
             dst = gBgOffsetsHBlankPrimary;
             dst = ((void *)dst) + (r5 * 4);
 
+#if PORTABLE
+            for (lineY = r5, r2 = 0; ((lineY < configDisplayHeight) && (r2 < 16)); lineY++, r2++) {
+#else
             for (lineY = r5, r2 = 0; ((lineY < DISPLAY_HEIGHT) && (r2 < 16)); lineY++, r2++) {
+#endif
                 *dst++ = ip;
                 *dst++ = (240 - r5);
             }
@@ -1944,7 +2060,11 @@ NONMATCH("asm/non_matching/game/stage/background/Zone7BgUpdate_Inside.inc", void
                 s32 r0 = (80 - lineY) >> 4;
                 r1 = r0;
 
+#if PORTABLE
+                for (r2 = 0; ((lineY < configDisplayHeight) && (r2 < r1)); lineY++, r2++) {
+#else
                 for (r2 = 0; ((lineY < DISPLAY_HEIGHT) && (r2 < r1)); lineY++, r2++) {
+#endif
                     *dst++ = 0;
                     *dst++ = (184 - r5);
                 }
@@ -1990,7 +2110,11 @@ NONMATCH("asm/non_matching/game/stage/background/Zone7BgUpdate_Inside.inc", void
             dst = gBgOffsetsHBlankPrimary;
             dst = ((void *)dst) + (r5 * 4);
 
+#if PORTABLE
+            for (lineY = r5, r2 = 0; ((lineY < configDisplayHeight) && (r2 < 32)); lineY++, r2++) {
+#else
             for (lineY = r5, r2 = 0; ((lineY < DISPLAY_HEIGHT) && (r2 < 32)); lineY++, r2++) {
+#endif
                 *dst++ = ip;
                 *dst++ = 208 - r5;
             }
@@ -2104,9 +2228,15 @@ void Zone7BgUpdate_Outside(s32 x, s32 y)
 #else
         gHBlankCopySize = 2 * sizeof(u16);
 
+#if PORTABLE
+        for (i = 0; i < configDisplayHeight; i++) {
+            const s32 gbaHLines = 160;
+            s32 originalLine = (s32)(((float)i / (float)configDisplayHeight) * (float)gbaHLines);
+#else
         for (i = 0; i < DISPLAY_HEIGHT; i++) {
             const s32 gbaHLines = 160;
             s32 originalLine = (s32)(((float)i / (float)DISPLAY_HEIGHT) * (float)gbaHLines);
+#endif
 
             if (originalLine < 80) {
                 sinVal = SIN_24_8(((gStageTime * 4) + originalLine * 2) & ONE_CYCLE) >> 3;
@@ -2397,7 +2527,11 @@ void StageBgUpdate_ZoneFinalActTA53(UNUSED s32 a, UNUSED s32 b)
         gHBlankCopySize = 2;
 
         offset = (u16 *)gBgOffsetsHBlankPrimary;
+#if PORTABLE
+        for (y = 0; y < configDisplayHeight - 1; y++) {
+#else
         for (y = 0; y < DISPLAY_HEIGHT - 1; y++) {
+#endif
             s16 val = SIN(((y + gStageTime) * 40) & ONE_CYCLE) >> 12;
             *offset++ = val;
         }
