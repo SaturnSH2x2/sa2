@@ -299,6 +299,8 @@ void CreateTitleScreen(void)
     s32 i, val;
     s16 denom;
 
+
+
     t = TaskCreate(Task_IntroStartSegaLogoAnim, sizeof(TitleScreen), 0x1000, 0, NULL);
     titleScreen = TASK_DATA(t);
 
@@ -359,6 +361,11 @@ static void CreateTitleScreenWithoutIntro(TitleScreen *titleScreen)
 {
     ScreenFade *fade;
     Background *bg0, *config40;
+
+#if ADJUSTABLE_RES
+    if (menuResSwitch) 
+      SwitchToOriginalResolution();
+#endif
 
     // Size of filler between unk2B4
     // and unkDF4
@@ -548,14 +555,14 @@ static void InitTitleScreenUI(TitleScreen *titleScreen)
     // Only display the COPYRIGHT message, not the "Licensed by ***" msg
     // TODO: Split the graphics properly.
 #if ADJUSTABLE_RES
-    s->x = configDisplayWidth - 136;
+    s->x = currentDisplayWidth - 136;
 #else
     s->x = DISPLAY_WIDTH - 136;
 #endif
 #endif
 
 #if ADJUSTABLE_RES
-    s->y = configDisplayHeight - 30;
+    s->y = currentDisplayHeight - 30;
 #else
     s->y = DISPLAY_HEIGHT - 30; // set to the screen's bottom
 #endif
@@ -578,8 +585,8 @@ static void InitTitleScreenUI(TitleScreen *titleScreen)
     s->prevVariant = -1;
 
 #if ADJUSTABLE_RES
-    s->x = (configDisplayWidth / 2);
-    s->y = (configDisplayHeight / 2) + 30;
+    s->x = (currentDisplayWidth / 2);
+    s->y = (currentDisplayHeight / 2) + 30;
 #else
     s->x = (DISPLAY_WIDTH / 2);
     s->y = (DISPLAY_HEIGHT / 2) + 30;
@@ -603,7 +610,7 @@ static void InitTitleScreenUI(TitleScreen *titleScreen)
         s->prevVariant = -1;
 
 #if ADJUSTABLE_RES
-        s->x = (configDisplayWidth / 2);
+        s->x = (currentDisplayWidth / 2);
 #else
         s->x = (DISPLAY_WIDTH / 2);
 #endif
@@ -613,21 +620,21 @@ static void InitTitleScreenUI(TitleScreen *titleScreen)
         if (menuItemId < SinglePlayerMenuItem(0)) {
             // PlayModeMenu positions
 #if ADJUSTABLE_RES
-            s->y = (PlayModeMenuIndex(menuItemId) * 18) + (configDisplayHeight / 2) + 16;
+            s->y = (PlayModeMenuIndex(menuItemId) * 18) + (currentDisplayHeight / 2) + 16;
 #else
             s->y = (PlayModeMenuIndex(menuItemId) * 18) + (DISPLAY_HEIGHT / 2) + 16;
 #endif
         } else if (gLoadedSaveGame->chaoGardenUnlocked) {
             // SinglePlayerMenu positions if we have the chao garden available
 #if ADJUSTABLE_RES
-            s->y = (SinglePlayerMenuIndex(menuItemId) * 16) + (configDisplayHeight / 2) + 16; 
+            s->y = (SinglePlayerMenuIndex(menuItemId) * 16) + (currentDisplayHeight / 2) + 16; 
 #else
             s->y = (SinglePlayerMenuIndex(menuItemId) * 16) + (DISPLAY_HEIGHT / 2) + 16;
 #endif
         } else {
             // SinglePlayerMenu positions if we don't have the chao garden
 #if ADJUSTABLE_RES
-            s->y = (SinglePlayerMenuIndex(menuItemId) * 18) + (configDisplayHeight / 2) + 20;
+            s->y = (SinglePlayerMenuIndex(menuItemId) * 18) + (currentDisplayHeight / 2) + 20;
 #else
             s->y = (SinglePlayerMenuIndex(menuItemId) * 18) + (DISPLAY_HEIGHT / 2) + 20;
 #endif
@@ -649,8 +656,8 @@ static void InitTitleScreenUI(TitleScreen *titleScreen)
     s->prevVariant = -1;
 
 #if ADJUSTABLE_RES
-    s->x = (configDisplayWidth / 2);
-    s->y = (configDisplayHeight / 2);
+    s->x = (currentDisplayWidth / 2);
+    s->y = (currentDisplayHeight / 2);
 #else
     s->x = (DISPLAY_WIDTH / 2);
     s->y = (DISPLAY_HEIGHT / 2);
@@ -667,6 +674,11 @@ static void InitTitleScreenUI(TitleScreen *titleScreen)
 
 static void Task_IntroFadeInSegaLogoAnim(void)
 {
+#if ADJUSTABLE_RES
+    if (menuResSwitch)
+      SwitchToOriginalResolution();
+#endif
+
     TitleScreen *titleScreen = TASK_DATA(gCurTask);
     WavesBackgroundAnim(titleScreen);
 
@@ -890,8 +902,8 @@ static void Task_IntroPanSkyAnim(void)
         titleScreen->animFrame = 0;
 
 #if ADJUSTABLE_RES
-        gWinRegs[WINREG_WIN1H] = WIN_RANGE(0, configDisplayWidth);
-        gWinRegs[WINREG_WIN1V] = WIN_RANGE(0, configDisplayHeight);
+        gWinRegs[WINREG_WIN1H] = WIN_RANGE(0, currentDisplayWidth);
+        gWinRegs[WINREG_WIN1V] = WIN_RANGE(0, currentDisplayHeight);
 #else
         gWinRegs[WINREG_WIN1H] = WIN_RANGE(0, DISPLAY_WIDTH);
         gWinRegs[WINREG_WIN1V] = WIN_RANGE(0, DISPLAY_HEIGHT);
@@ -935,8 +947,8 @@ static void Task_IntroSkyAnim(void)
         gDispCnt |= 0x4000;
 
 #if ADJUSTABLE_RES
-        gWinRegs[WINREG_WIN1H] = WIN_RANGE(0, configDisplayWidth);
-        gWinRegs[WINREG_WIN1V] = WIN_RANGE(0, configDisplayHeight);
+        gWinRegs[WINREG_WIN1H] = WIN_RANGE(0, currentDisplayWidth);
+        gWinRegs[WINREG_WIN1V] = WIN_RANGE(0, currentDisplayHeight);
 #else
         gWinRegs[WINREG_WIN1H] = WIN_RANGE(0, DISPLAY_WIDTH);
         gWinRegs[WINREG_WIN1V] = WIN_RANGE(0, DISPLAY_HEIGHT);
@@ -1131,7 +1143,7 @@ static void Task_PlayModeMenuMain(void)
         if (titleScreen->menuCursor == PlayModeMenuIndex(MENU_ITEM_SINGLE_PLAYER)) {
 
 #if ADJUSTABLE_RES
-            titleScreen->menuItems[MENU_ITEM_MULTI_PLAYER].x = (configDisplayHeight / 2);
+            titleScreen->menuItems[MENU_ITEM_MULTI_PLAYER].x = (currentDisplayHeight / 2);
 #else
             titleScreen->menuItems[MENU_ITEM_MULTI_PLAYER].x = (DISPLAY_WIDTH / 2);
 #endif
@@ -1365,6 +1377,11 @@ static void Task_ShowTitleScreenIntroSkipped(void)
     Background *bg0 = &titleScreen->unk0;
     Background *config40;
 
+#if ADJUSTABLE_RES
+    if (menuResSwitch)
+      SwitchToOriginalResolution();
+#endif
+
     DmaFill32(3, 0, (void *)BG_VRAM, BG_VRAM_SIZE);
     INIT_BG_SPRITES_LAYER_32(0);
     INIT_BG_SPRITES_LAYER_32(2);
@@ -1473,8 +1490,8 @@ static void WavesBackgroundAnim(TitleScreen *titleScreen)
     gDispCnt |= DISPCNT_WIN1_ON;
 
 #if ADJUSTABLE_RES
-    gWinRegs[WINREG_WIN1H] = WIN_RANGE(0, configDisplayWidth);
-    gWinRegs[WINREG_WIN1V] = WIN_RANGE((titleScreen->wavesTopOffset - 2), configDisplayHeight);
+    gWinRegs[WINREG_WIN1H] = WIN_RANGE(0, currentDisplayWidth);
+    gWinRegs[WINREG_WIN1V] = WIN_RANGE((titleScreen->wavesTopOffset - 2), currentDisplayHeight);
 #else
     gWinRegs[WINREG_WIN1H] = WIN_RANGE(0, DISPLAY_WIDTH);
     gWinRegs[WINREG_WIN1V] = WIN_RANGE((titleScreen->wavesTopOffset - 2), DISPLAY_HEIGHT);
@@ -1505,7 +1522,7 @@ static void WavesBackgroundAnim(TitleScreen *titleScreen)
     gBgOffsetsHBlankPrimary = titleScreen->unk3F4;
     pointer = (void *)titleScreen->unk3F4;
 #if ADJUSTABLE_RES
-    for (i = 0, j = 0; i < configDisplayHeight; i++) {
+    for (i = 0, j = 0; i < currentDisplayHeight; i++) {
 #else
     for (i = 0, j = 0; i < DISPLAY_HEIGHT; i++) {
 #endif
@@ -1879,6 +1896,11 @@ static void Task_ShowPressStartMenu(void)
 {
     TitleScreen *titleScreen = TASK_DATA(gCurTask);
 
+#if ADJUSTABLE_RES
+    if (menuResSwitch)
+      SwitchToOriginalResolution();
+#endif
+
     DisplaySprite(&titleScreen->unkC0);
     ShowGameLogo(titleScreen);
 
@@ -1969,7 +1991,7 @@ static void ShowGameLogo(TitleScreen *_)
 {
     // angle, width, height, right, bottom, left, top
 #if ADJUSTABLE_RES
-    sub_8003EE4(0, 0x100, 0x100, 0, 0, (configDisplayWidth / 2) - 100, 8, gBgAffineRegs);
+    sub_8003EE4(0, 0x100, 0x100, 0, 0, (currentDisplayWidth / 2) - 100, 8, gBgAffineRegs);
 #else
     sub_8003EE4(0, 0x100, 0x100, 0, 0, (DISPLAY_WIDTH / 2) - 100, 8, gBgAffineRegs);
 #endif

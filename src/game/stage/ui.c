@@ -155,7 +155,7 @@ struct Task *CreateStageUI(void)
         s = &ui->playerIcon;
         s->x = 6;
 #if ADJUSTABLE_RES
-        s->y = configDisplayHeight - 18;
+        s->y = currentDisplayHeight - 18;
 #else
         s->y = DISPLAY_HEIGHT - 18;
 #endif
@@ -321,7 +321,7 @@ void Task_StageUIMain(void)
 #endif
             {
 #if ADJUSTABLE_RES
-                UI_OAM_SET(oam, 6, configDisplayHeight - 18, SPRITE_SHAPE(16x16), SPRITE_SIZE(16x16), ui->playerIconTileData);
+                UI_OAM_SET(oam, 6, currentDisplayHeight - 18, SPRITE_SHAPE(16x16), SPRITE_SIZE(16x16), ui->playerIconTileData);
 #else
                 UI_OAM_SET(oam, 6, DISPLAY_HEIGHT - 18, SPRITE_SHAPE(16x16), SPRITE_SIZE(16x16), ui->playerIconTileData);
 #endif
@@ -343,7 +343,7 @@ void Task_StageUIMain(void)
 #endif
             {
 #if ADJUSTABLE_RES
-                UI_OAM_SET(oam, 30, (configDisplayHeight - 20), SPRITE_SHAPE(8x16), SPRITE_SIZE(8x16), ui->digitsTileData[i]);
+                UI_OAM_SET(oam, 30, (currentDisplayHeight - 20), SPRITE_SHAPE(8x16), SPRITE_SIZE(8x16), ui->digitsTileData[i]);
 #else
                 UI_OAM_SET(oam, 30, (DISPLAY_HEIGHT - 20), SPRITE_SHAPE(8x16), SPRITE_SIZE(8x16), ui->digitsTileData[i]);
 #endif
@@ -454,11 +454,11 @@ void Task_StageUIMain(void)
 #endif
             {
 #if ADJUSTABLE_RES
-                if (configDisplayWidth < 240) {
-                  UI_OAM_SET(oam, (configDisplayWidth - 30) - 21, 0, SPRITE_SHAPE(8x16), SPRITE_SIZE(8x16),
+                if (currentDisplayWidth < 240) {
+                  UI_OAM_SET(oam, (currentDisplayWidth - 30) - 21, 0, SPRITE_SHAPE(8x16), SPRITE_SIZE(8x16),
                              (ui->digitsTileData[UI_ASCII_COLON] | palId));
                 } else {
-                  UI_OAM_SET(oam, (configDisplayWidth / 2) - 21, 0, SPRITE_SHAPE(8x16), SPRITE_SIZE(8x16),
+                  UI_OAM_SET(oam, (currentDisplayWidth / 2) - 21, 0, SPRITE_SHAPE(8x16), SPRITE_SIZE(8x16),
                              (ui->digitsTileData[UI_ASCII_COLON] | palId));
                 }
 #else
@@ -474,11 +474,11 @@ void Task_StageUIMain(void)
 #endif
             {
 #if ADJUSTABLE_RES
-                if (configDisplayWidth < 240) {
-                  UI_OAM_SET(oam, (configDisplayWidth - 30) + 3, 0, SPRITE_SHAPE(8x16), SPRITE_SIZE(8x16),
+                if (currentDisplayWidth < 240) {
+                  UI_OAM_SET(oam, (currentDisplayWidth - 30) + 3, 0, SPRITE_SHAPE(8x16), SPRITE_SIZE(8x16),
                            (ui->digitsTileData[UI_ASCII_COLON] | palId));
                 } else {
-                  UI_OAM_SET(oam, (configDisplayWidth / 2) + 3, 0, SPRITE_SHAPE(8x16), SPRITE_SIZE(8x16),
+                  UI_OAM_SET(oam, (currentDisplayWidth / 2) + 3, 0, SPRITE_SHAPE(8x16), SPRITE_SIZE(8x16),
                            (ui->digitsTileData[UI_ASCII_COLON] | palId));
                 }
 #else
@@ -504,10 +504,10 @@ void Task_StageUIMain(void)
             // Milliseconds-L
             sd = &digits[gMillisUnpackTable[r5][0]];
 #if ADJUSTABLE_RES
-            if (configDisplayWidth < 240)
-              sd->x = ((configDisplayWidth - 30) + 16) + 0 * 8;
+            if (currentDisplayWidth < 240)
+              sd->x = ((currentDisplayWidth - 30) + 16) + 0 * 8;
             else
-              sd->x = ((configDisplayWidth / 2) + 16) + 0 * 8;
+              sd->x = ((currentDisplayWidth / 2) + 16) + 0 * 8;
 #else
             sd->x = ((DISPLAY_WIDTH / 2) + 16) + 0 * 8;
 #endif
@@ -518,10 +518,10 @@ void Task_StageUIMain(void)
             // Milliseconds-R
             sd = &digits[gMillisUnpackTable[r5][1]];
 #if ADJUSTABLE_RES
-            if (configDisplayWidth < 240)
-              sd->x = ((configDisplayWidth - 30) + 16) + 1 * 8;
+            if (currentDisplayWidth < 240)
+              sd->x = ((currentDisplayWidth - 30) + 16) + 1 * 8;
             else
-              sd->x = ((configDisplayWidth  / 2) + 16) + 1 * 8;
+              sd->x = ((currentDisplayWidth  / 2) + 16) + 1 * 8;
 #else
             sd->x = ((DISPLAY_WIDTH / 2) + 16) + 1 * 8;
 #endif
@@ -532,10 +532,10 @@ void Task_StageUIMain(void)
             // Seconds-L
             sd = &digits[gSecondsTable[seconds][0]];
 #if ADJUSTABLE_RES
-            if (configDisplayWidth < 240)
-              sd->x = ((configDisplayWidth - 30) - 8) + 0 * 8;
+            if (currentDisplayWidth < 240)
+              sd->x = ((currentDisplayWidth - 30) - 8) + 0 * 8;
             else
-              sd->x = ((configDisplayWidth / 2) - 8) + 0 * 8;
+              sd->x = ((currentDisplayWidth / 2) - 8) + 0 * 8;
 #else
             sd->x = ((DISPLAY_WIDTH / 2) - 8) + 0 * 8;
 #endif
@@ -546,10 +546,10 @@ void Task_StageUIMain(void)
             // Seconds-R
             sd = &digits[gSecondsTable[seconds][1]];
 #if ADJUSTABLE_RES
-            if (configDisplayWidth < 240)
-              sd->x = ((configDisplayWidth - 30) - 8) + 1 * 8;
+            if (currentDisplayWidth < 240)
+              sd->x = ((currentDisplayWidth - 30) - 8) + 1 * 8;
             else
-              sd->x = ((configDisplayWidth / 2) - 8) + 1 * 8;
+              sd->x = ((currentDisplayWidth / 2) - 8) + 1 * 8;
 #else
             sd->x = ((DISPLAY_WIDTH / 2) - 8) + 1 * 8;
 #endif
@@ -560,10 +560,10 @@ void Task_StageUIMain(void)
             // Minutes
             sd = &digits[minutes];
 #if ADJUSTABLE_RES
-            if (configDisplayWidth < 240)
-              sd->x = (configDisplayWidth - 30) - 24;
+            if (currentDisplayWidth < 240)
+              sd->x = (currentDisplayWidth - 30) - 24;
             else
-              sd->x = (configDisplayWidth / 2) - 24;
+              sd->x = (currentDisplayWidth / 2) - 24;
 #else
             sd->x = (DISPLAY_WIDTH / 2) - 24;
 #endif

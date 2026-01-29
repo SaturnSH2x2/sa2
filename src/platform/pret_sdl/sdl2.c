@@ -78,6 +78,8 @@ struct bgPriority {
 SDL_Window *sdlWindow;
 SDL_Renderer *sdlRenderer;
 SDL_Texture *sdlTexture;
+// TODO: switch to SDL_Surface to maintain aspect ratio
+SDL_Texture *originalResTexture;
 SDL_Window *vramWindow;
 SDL_Renderer *vramRenderer;
 SDL_Texture *vramTexture;
@@ -91,9 +93,24 @@ bool isRunning = true;
 bool paused = false;
 bool stepOneFrame = false;
 bool headless = false;
+
+// config variables
+
+// enables separate VRAM view
 int enableVRAMView = 0;
+
+// setting to 1 locks internal resolution to that of the GBA 
+// done to avoid visual artifacts in menus when running at higher resolutions
+int menuResSwitch = 0;
+int originalResActive = 0;
+
+// resolution specified by the runtime
 u16 configDisplayWidth  = 0;
 u16 configDisplayHeight = 0;
+
+// resolution of current display texture (needed for runtime res changes)
+u16 currentDisplayWidth  = 0;
+u16 currentDisplayHeight = 0;
 
 double lastGameTime = 0;
 double curGameTime = 0;
@@ -123,6 +140,18 @@ void *Platform_malloc(size_t numBytes) { return HeapAlloc(GetProcessHeap(), HEAP
 void Platform_free(void *ptr) { HeapFree(GetProcessHeap(), 0, ptr); }
 #endif
 
+void SwitchToOriginalResolution() { 
+  currentDisplayWidth = GBA_WIDTH;
+  currentDisplayHeight = GBA_HEIGHT;
+  originalResActive = 1;
+}
+
+void SwitchToConfigResolution() {
+  currentDisplayWidth = configDisplayWidth;
+  currentDisplayHeight = configDisplayHeight;
+  originalResActive = 0;
+}
+
 void LoadConfig(void)
 {
   FILE* f;
@@ -137,8 +166,9 @@ void LoadConfig(void)
     iniFile = iniparser_load(CONFIG_FILENAME);
 
     iniparser_set(iniFile, "Game", NULL);
-    iniparser_set(iniFile, "Game:ScreenWidth", "424");
-    iniparser_set(iniFile, "Game:ScreenHeight", "240");
+    iniparser_set(iniFile, "Game:ScreenWidth", "320");
+    iniparser_set(iniFile, "Game:ScreenHeight", "180");
+    iniparser_set(iniFile, "Game:OriginalResMenus", "0");
 
     iniparser_set(iniFile, "Debug", NULL);
     iniparser_set(iniFile, "Debug:EnableVramView", "0");
@@ -155,7 +185,17 @@ void LoadConfig(void)
 
   enableVRAMView = iniparser_getint(iniFile, "Debug:EnableVramView", 0);
   configDisplayWidth = iniparser_getint(iniFile, "Game:ScreenWidth", 320);
+  if (configDisplayWidth > DISPLAY_WIDTH)
+    configDisplayWidth = DISPLAY_WIDTH;
+
   configDisplayHeight = iniparser_getint(iniFile, "Game:ScreenHeight", 180);
+  if (configDisplayHeight > DISPLAY_HEIGHT)
+    configDisplayHeight = DISPLAY_HEIGHT;
+
+  menuResSwitch = iniparser_getint(iniFile, "Game:OriginalResMenus", 1);
+
+  currentDisplayWidth = configDisplayWidth;
+  currentDisplayHeight = configDisplayHeight;
 }
 
 int main(int argc, char **argv)
@@ -209,8 +249,8 @@ int main(int argc, char **argv)
     const char *title = "SAT-R sa2";
 #endif
 
-    sdlWindow = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, configDisplayWidth * videoScale,
-                                 configDisplayHeight * videoScale, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+    sdlWindow = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, currentDisplayWidth * videoScale,
+                                 currentDisplayHeight * videoScale, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
     if (sdlWindow == NULL) {
         fprintf(stderr, "Window could not be created! SDL_Error: %s\n", SDL_GetError());
         return 1;
@@ -249,17 +289,25 @@ int main(int argc, char **argv)
     SDL_SetRenderDrawColor(sdlRenderer, 0, 0, 0, 255);
     SDL_RenderClear(sdlRenderer);
     SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "0");
-    SDL_RenderSetLogicalSize(sdlRenderer, configDisplayWidth, configDisplayHeight);
+    SDL_RenderSetLogicalSize(sdlRenderer, currentDisplayWidth, currentDisplayHeight);
     if (enableVRAMView) {
         SDL_SetRenderDrawColor(vramRenderer, 0, 0, 0, 255);
         SDL_RenderClear(vramRenderer);
         SDL_RenderSetLogicalSize(vramRenderer, vramWindowWidth, vramWindowHeight);
     }
 
-    sdlTexture = SDL_CreateTexture(sdlRenderer, SDL_PIXELFORMAT_ABGR1555, SDL_TEXTUREACCESS_STREAMING, configDisplayWidth, configDisplayHeight);
+    sdlTexture = SDL_CreateTexture(sdlRenderer, SDL_PIXELFORMAT_ABGR1555, SDL_TEXTUREACCESS_STREAMING, currentDisplayWidth, currentDisplayHeight);
     if (sdlTexture == NULL) {
         fprintf(stderr, "Texture could not be created! SDL_Error: %s\n", SDL_GetError());
         return 1;
+    }
+
+    if (menuResSwitch) {
+      originalResTexture = SDL_CreateTexture(sdlRenderer, SDL_PIXELFORMAT_ABGR1555, SDL_TEXTUREACCESS_STREAMING, GBA_WIDTH, GBA_HEIGHT);
+      if (sdlTexture == NULL) {
+        fprintf(stderr, "Texture could not be created! SDL_Error: %s\n", SDL_GetError());
+        return 1;
+      }
     }
 
     if (enableVRAMView) {
@@ -289,7 +337,10 @@ int main(int argc, char **argv)
     }
 #endif
 
-    VDraw(sdlTexture);
+    if (originalResActive)
+      VDraw(originalResTexture);
+    else
+      VDraw(sdlTexture);
     if (enableVRAMView) 
         VramDraw(vramTexture);
     AgbMain();
@@ -352,7 +403,10 @@ void VBlankIntrWait(void)
             while (accumulator >= dt) {
                 REG_KEYINPUT = KEYS_MASK ^ Platform_GetKeyInput();
                 if (frameAvailable) {
-                    VDraw(sdlTexture);
+                    if (originalResActive)
+                      VDraw(originalResTexture);
+                    else
+                      VDraw(sdlTexture);
                     frameAvailable = FALSE;
 
                     HANDLE_VBLANK_INTRS();
@@ -370,7 +424,11 @@ void VBlankIntrWait(void)
         }
 
         SDL_RenderClear(sdlRenderer);
-        SDL_RenderCopy(sdlRenderer, sdlTexture, NULL, NULL);
+
+        if (originalResActive)
+          SDL_RenderCopy(sdlRenderer, originalResTexture, NULL, NULL);
+        else
+          SDL_RenderCopy(sdlRenderer, sdlTexture, NULL, NULL);
 
         if (enableVRAMView) {
             VramDraw(vramTexture);
@@ -379,7 +437,7 @@ void VBlankIntrWait(void)
         }
 
         if (videoScaleChanged) {
-            SDL_SetWindowSize(sdlWindow, configDisplayWidth * videoScale, configDisplayHeight * videoScale);
+            SDL_SetWindowSize(sdlWindow, currentDisplayWidth * videoScale, currentDisplayHeight * videoScale);
             videoScaleChanged = false;
         }
 
@@ -526,7 +584,7 @@ void ProcessSDLEvents(void)
                     }
                     SDL_SetWindowFullscreen(sdlWindow, fullScreenFlags);
 
-                    SDL_SetWindowSize(sdlWindow, configDisplayWidth * videoScale, configDisplayHeight * videoScale);
+                    SDL_SetWindowSize(sdlWindow, currentDisplayWidth * videoScale, currentDisplayHeight * videoScale);
                     videoScaleChanged = FALSE;
                 } else
                     switch (event.key.keysym.sym) {
@@ -569,10 +627,10 @@ void ProcessSDLEvents(void)
                     unsigned int h = event.window.data2;
 
                     videoScale = 0;
-                    if (w / configDisplayWidth > videoScale)
-                        videoScale = w / configDisplayWidth;
-                    if (h / configDisplayHeight > videoScale)
-                        videoScale = h / configDisplayHeight;
+                    if (w / currentDisplayWidth > videoScale)
+                        videoScale = w / currentDisplayWidth;
+                    if (h / currentDisplayHeight > videoScale)
+                        videoScale = h / currentDisplayHeight;
                     if (videoScale < 1)
                         videoScale = 1;
 
@@ -1034,7 +1092,7 @@ static void RenderBGScanline(int bgNum, uint16_t control, uint16_t hoffs, uint16
     hoffs &= 0x1FF;
     voffs &= 0x1FF;
 
-    for (unsigned int x = 0; x < configDisplayWidth; x++) {
+    for (unsigned int x = 0; x < currentDisplayWidth; x++) {
         unsigned int xx, yy;
 
         // Calculate the source coordinate in the background map, applying scroll and mosaic
@@ -1238,7 +1296,7 @@ static void RenderRotScaleBGScanline(int bgNum, uint16_t control, uint16_t x, ui
     int realY = currentY;
 
     if (bgcnt->areaOverflowMode) {
-        for (int x = 0; x < configDisplayWidth; x++) {
+        for (int x = 0; x < currentDisplayWidth; x++) {
             int xxx = (realX >> 8) & maskX;
             int yyy = (realY >> 8) & maskY;
 
@@ -1257,7 +1315,7 @@ static void RenderRotScaleBGScanline(int bgNum, uint16_t control, uint16_t x, ui
             realY += pc;
         }
     } else {
-        for (int x = 0; x < configDisplayWidth; x++) {
+        for (int x = 0; x < currentDisplayWidth; x++) {
             int xxx = (realX >> 8);
             int yyy = (realY >> 8);
 
@@ -1282,7 +1340,7 @@ static void RenderRotScaleBGScanline(int bgNum, uint16_t control, uint16_t x, ui
     // the only way i could figure out how to get accurate mosaic on affine bgs
     // luckily i dont think pokemon emerald uses mosaic on affine bgs
     if (control & BGCNT_MOSAIC && mosaicBGEffectX > 0) {
-        for (int x = 0; x < configDisplayWidth; x++) {
+        for (int x = 0; x < currentDisplayWidth; x++) {
             uint16_t color = line[applyBGHorizontalMosaicEffect(x)];
             line[x] = color;
         }
@@ -1464,9 +1522,9 @@ static void DrawOamSprites(struct scanlineData *scanline, uint16_t vcount, bool 
         // This is done so that, for example, a sprite at 0 on either axis that moves left or up will not suddenly disappear.
         //
         // With EXTENDED_OAM we are using signed 16 bit values, so we don't want to change the raw value.
-        if (x >= configDisplayWidth)
+        if (x >= currentDisplayWidth)
             x -= 512;
-        if (y >= configDisplayHeight)
+        if (y >= currentDisplayHeight)
             y -= 256;
 #endif
 
@@ -1520,7 +1578,7 @@ static void DrawOamSprites(struct scanlineData *scanline, uint16_t vcount, bool 
 
                 unsigned int global_x = local_x + x;
 
-                if (global_x < 0 || global_x >= configDisplayWidth)
+                if (global_x < 0 || global_x >= currentDisplayWidth)
                     continue;
 
                 if (oam->split.mosaic == 1) {
@@ -1576,7 +1634,7 @@ static void DrawOamSprites(struct scanlineData *scanline, uint16_t vcount, bool 
                         continue;
                     }
                     // this code runs if pixel is to be drawn
-                    if (global_x < configDisplayWidth && global_x >= 0) {
+                    if (global_x < currentDisplayWidth && global_x >= 0) {
                         // check if its enabled in the window (if window is enabled)
                         winShouldBlendPixel = (windowsEnabled == false || scanline->winMask[global_x] & WINMASK_CLR);
 
@@ -1720,7 +1778,7 @@ static void DrawScanline(uint16_t *pixels, uint16_t vcount)
 
     // draw to pixel mask
     if (windowsEnabled) {
-        for (xpos = 0; xpos < configDisplayWidth; xpos++) {
+        for (xpos = 0; xpos < currentDisplayWidth; xpos++) {
             // win0 checks
             if (WIN0enable && winCheckHorizontalBounds(WIN0left, WIN0right, xpos))
                 scanline.winMask[xpos] = REG_WININ & 0x3F;
@@ -1743,7 +1801,7 @@ static void DrawScanline(uint16_t *pixels, uint16_t vcount)
             if (isbgEnabled(bgnum)) {
                 uint16_t *src = scanline.layers[bgnum];
                 // copy all pixels to framebuffer
-                for (xpos = 0; xpos < configDisplayWidth; xpos++) {
+                for (xpos = 0; xpos < currentDisplayWidth; xpos++) {
                     uint16_t color = src[xpos];
                     bool winEffectEnable = true;
 
@@ -1785,7 +1843,7 @@ static void DrawScanline(uint16_t *pixels, uint16_t vcount)
         }
         // draw sprites on current priority
         uint16_t *src = scanline.spriteLayers[prnum];
-        for (xpos = 0; xpos < configDisplayWidth; xpos++) {
+        for (xpos = 0; xpos < currentDisplayWidth; xpos++) {
             if (getAlphaBit(src[xpos])) {
                 // check if sprite pixel draws inside window
                 if (windowsEnabled && !(scanline.winMask[xpos] & WINMASK_OBJ))
@@ -1813,7 +1871,7 @@ static void DrawFrame(uint16_t *pixels)
     static uint16_t scanlines[DISPLAY_HEIGHT][DISPLAY_WIDTH];
     unsigned int blendMode = (REG_BLDCNT >> 6) & 3;
 
-    for (i = 0; i < configDisplayHeight; i++) {
+    for (i = 0; i < currentDisplayHeight; i++) {
         REG_VCOUNT = i;
         if (((REG_DISPSTAT >> 8) & 0xFF) == REG_VCOUNT) {
             REG_DISPSTAT |= INTR_FLAG_VCOUNT;
@@ -1823,7 +1881,7 @@ static void DrawFrame(uint16_t *pixels)
 
         // Render the backdrop color before the each individual scanline.
         // HBlank interrupt code could have changed it inbetween lines.
-        memsetu16(scanlines[i], *(uint16_t *)PLTT, configDisplayWidth);
+        memsetu16(scanlines[i], *(uint16_t *)PLTT, currentDisplayWidth);
         DrawScanline(scanlines[i], i);
 
         REG_DISPSTAT |= INTR_FLAG_HBLANK;
@@ -1840,8 +1898,8 @@ static void DrawFrame(uint16_t *pixels)
     // Copy to screen
     for (i = 0; i < DISPLAY_HEIGHT; i++) {
         uint16_t *src = scanlines[i];
-        for (j = 0; j < configDisplayWidth; j++) {
-            pixels[i * configDisplayWidth + j] = src[j];
+        for (j = 0; j < currentDisplayWidth; j++) {
+            pixels[i * currentDisplayWidth + j] = src[j];
         }
     }
 }
@@ -1884,7 +1942,7 @@ void VDraw(SDL_Texture *texture)
 {
     memset(gameImage, 0, sizeof(gameImage));
     DrawFrame(gameImage);
-    SDL_UpdateTexture(texture, NULL, gameImage, configDisplayWidth * sizeof(Uint16));
+    SDL_UpdateTexture(texture, NULL, gameImage, currentDisplayWidth * sizeof(Uint16));
     REG_VCOUNT = DISPLAY_HEIGHT + 1; // prep for being in VBlank period
 }
 

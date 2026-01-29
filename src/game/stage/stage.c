@@ -159,6 +159,11 @@ void GameStageStart(void)
     // Unused leftover var from SA1, used for CPU "Partner" Tails
     gNumSingleplayerCharacters = 1;
 
+#if ADJUSTABLE_RES
+    if (menuResSwitch)
+      SwitchToConfigResolution();
+#endif
+
     if (gCurrentLevel != LEVEL_INDEX(ZONE_FINAL, ACT_TRUE_AREA_53)) {
         CallSetStageSpawnPos(gSelectedCharacter, gCurrentLevel, 0, &gPlayer);
         gCheese = NULL;
