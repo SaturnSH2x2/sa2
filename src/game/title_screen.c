@@ -299,8 +299,6 @@ void CreateTitleScreen(void)
     s32 i, val;
     s16 denom;
 
-
-
     t = TaskCreate(Task_IntroStartSegaLogoAnim, sizeof(TitleScreen), 0x1000, 0, NULL);
     titleScreen = TASK_DATA(t);
 
@@ -674,11 +672,6 @@ static void InitTitleScreenUI(TitleScreen *titleScreen)
 
 static void Task_IntroFadeInSegaLogoAnim(void)
 {
-#if ADJUSTABLE_RES
-    if (menuResSwitch)
-      SwitchToOriginalResolution();
-#endif
-
     TitleScreen *titleScreen = TASK_DATA(gCurTask);
     WavesBackgroundAnim(titleScreen);
 
@@ -1847,6 +1840,11 @@ static void LoadTinyChaoGarden(void)
 
 void CreateTitleScreenAndSkipIntro(void)
 {
+#if ADJUSTABLE_RES
+    if (menuResSwitch) 
+      SwitchToOriginalResolution();
+#endif
+
     struct Task *t;
     REG_SIOCNT |= SIO_INTR_ENABLE;
 
@@ -1915,6 +1913,11 @@ static void Task_IntroStartSegaLogoAnim(void)
 {
     TitleScreen *titleScreen = TASK_DATA(gCurTask);
     WavesBackgroundAnim(titleScreen);
+
+#if ADJUSTABLE_RES
+    if (menuResSwitch) 
+      SwitchToOriginalResolution();
+#endif
 
     if (UpdateScreenFade(&titleScreen->unk270) == SCREEN_FADE_COMPLETE) {
         gCurTask->main = Task_IntroFadeInSegaLogoAnim;

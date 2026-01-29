@@ -265,11 +265,16 @@ const Background gStageCameraBgTemplates[4] = {
 
 #ifndef COLLECT_RINGS_ROM
 
+#if ADJUSTABLE_RES
+u16 gBossCameraYClamps[ZONE_FINAL + 2][2];
+#else
 const u16 gBossCameraYClamps[][2] = {
     [ZONE_1] = { 32, DISPLAY_HEIGHT + 56 },  [ZONE_2] = { 32, DISPLAY_HEIGHT + 44 },      [ZONE_3] = { 32, DISPLAY_HEIGHT + 56 },
     [ZONE_4] = { 32, DISPLAY_HEIGHT + 48 },  [ZONE_5] = { 32, DISPLAY_HEIGHT + 48 },      [ZONE_6] = { 32, DISPLAY_HEIGHT + 72 },
     [ZONE_7] = { 32, DISPLAY_HEIGHT + 104 }, [ZONE_FINAL] = { 32, DISPLAY_HEIGHT + 104 }, [ZONE_FINAL + 1] = { 32, DISPLAY_HEIGHT + 104 },
 };
+#endif
+
 #endif
 
 static const VoidFn sStageBgInitProcedures[NUM_LEVEL_IDS] = {
@@ -423,6 +428,27 @@ void InitCamera(u32 level)
     Player *player = &gPlayer;
     struct Camera *camera = &gCamera;
     const s8 *bgDim = sStageBgDimensions[level];
+
+#if ADJUSTABLE_RES
+    gBossCameraYClamps[ZONE_1][0] = 32;
+    gBossCameraYClamps[ZONE_1][1] = currentDisplayHeight + 56;
+    gBossCameraYClamps[ZONE_2][0] = 32;
+    gBossCameraYClamps[ZONE_2][1] = currentDisplayHeight + 44;
+    gBossCameraYClamps[ZONE_3][0] = 32;
+    gBossCameraYClamps[ZONE_3][1] = currentDisplayHeight + 56;
+    gBossCameraYClamps[ZONE_4][0] = 32;
+    gBossCameraYClamps[ZONE_4][1] = currentDisplayHeight + 48;
+    gBossCameraYClamps[ZONE_5][0] = 32;
+    gBossCameraYClamps[ZONE_5][1] = currentDisplayHeight + 48;
+    gBossCameraYClamps[ZONE_6][0] = 32;
+    gBossCameraYClamps[ZONE_6][1] = currentDisplayHeight + 72;
+    gBossCameraYClamps[ZONE_7][0] = 32;
+    gBossCameraYClamps[ZONE_7][1] = currentDisplayHeight + 104;
+    gBossCameraYClamps[ZONE_FINAL][0] = 32;
+    gBossCameraYClamps[ZONE_FINAL][1] = currentDisplayHeight + 104;
+    gBossCameraYClamps[ZONE_FINAL + 1][0] = 32;
+    gBossCameraYClamps[ZONE_FINAL + 1][1] = currentDisplayHeight + 104;
+#endif
 
     gDispCnt = (DISPCNT_OBJ_ON | DISPCNT_WIN0_ON | DISPCNT_BG1_ON | DISPCNT_BG2_ON | DISPCNT_BG3_ON | DISPCNT_OBJ_1D_MAP);
 #ifndef COLLECT_RINGS_ROM
