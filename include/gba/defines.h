@@ -42,8 +42,23 @@
 #define DISPLAY_WIDTH  480
 #define DISPLAY_HEIGHT 270
 
+#if PLATFORM_SDL == 1
+#define ADJUSTABLE_RES 1
+
+#define GBA_WIDTH 240 
+#define GBA_HEIGHT 160
+
+extern int menuResSwitch;
+extern int originalResActive;
 extern uint16_t configDisplayWidth;
 extern uint16_t configDisplayHeight;
+extern uint16_t currentDisplayWidth;
+extern uint16_t currentDisplayHeight;
+
+void SwitchToOriginalResolution();
+void SwitchToConfigResolution();
+
+#endif
 
 // NOTE: We shouldn't consider WIDESCREEN_HACK a permanent thing.
 //       This hack should best be removed once there's a "native" platform layer.
@@ -53,6 +68,7 @@ extern uint16_t configDisplayHeight;
 #define WIDESCREEN_HACK TRUE
 #define EXTENDED_OAM TRUE
 #else
+#define ADJUSTABLE_RES 0
 #define WIDESCREEN_HACK FALSE
 #define EXTENDED_OAM !TRUE
 #endif
@@ -88,6 +104,7 @@ extern uint8_t OAM[OAM_SIZE];
 #else
 #define DISPLAY_WIDTH  240
 #define DISPLAY_HEIGHT 160
+#define ADJUSTABLE_RES 0
 
 // NOTE(Jace): I tried replacing these altogether,
 //             but that resulted in a nonmatching ROM
