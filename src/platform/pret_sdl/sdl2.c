@@ -144,12 +144,14 @@ void SwitchToOriginalResolution() {
   currentDisplayWidth = GBA_WIDTH;
   currentDisplayHeight = GBA_HEIGHT;
   originalResActive = 1;
+  SDL_RenderSetLogicalSize(sdlRenderer, currentDisplayWidth, currentDisplayHeight);
 }
 
 void SwitchToConfigResolution() {
   currentDisplayWidth = configDisplayWidth;
   currentDisplayHeight = configDisplayHeight;
   originalResActive = 0;
+  SDL_RenderSetLogicalSize(sdlRenderer, currentDisplayWidth, currentDisplayHeight);
 }
 
 void LoadConfig(void)
