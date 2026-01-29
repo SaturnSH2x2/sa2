@@ -504,7 +504,7 @@ void InitCamera(u32 level)
             gBossCameraClampYLower = gBossCameraYClamps[ZONE_FINAL + 1][0];
             gBossCameraClampYUpper = gBossCameraYClamps[ZONE_FINAL + 1][1];
             camera->x = 600;
-#if PORTABLE
+#if ADJUSTABLE_RES
             camera->unk10 = (configDisplayWidth / 2);
 #else
             camera->unk10 = (DISPLAY_WIDTH / 2);
@@ -518,7 +518,7 @@ void InitCamera(u32 level)
             // for now we use the original GBA values as otherwise the boss
             // goes off the screen (not sure why yet)
             camera->unk10 = I(player->qWorldX) - (2 * 240);
-#if PORTABLE
+#if ADJUSTABLE_RES
             camera->y = I(player->qWorldY) - ((configDisplayHeight / 2) + 4);
 #else
             camera->y = I(player->qWorldY) - ((DISPLAY_HEIGHT / 2) + 4);
@@ -530,7 +530,7 @@ void InitCamera(u32 level)
 #endif
     {
 
-#if PORTABLE
+#if ADJUSTABLE_RES
         camera->x = I(player->qWorldX) - (configDisplayWidth / 2);
         camera->y = I(player->qWorldY) - ((configDisplayHeight / 2) + 4);
 #else
@@ -578,7 +578,7 @@ void InitCamera(u32 level)
 }
 
 // Only need to use the original value for these zones
-#if PORTABLE
+#if ADJUSTABLE_RES
 #define DISPLAY_WIDTH_FOR_BOSS_TAS                                                                                                         \
     ((LEVEL_TO_ZONE(gCurrentLevel) == ZONE_2 || LEVEL_TO_ZONE(gCurrentLevel) == ZONE_6) ? (240 / 2) : (configDisplayWidth / 2))
 #else
@@ -596,7 +596,7 @@ void UpdateCamera(void)
     camera->dx = camera->x;
     camera->dy = camera->y;
 
-#if PORTABLE
+#if ADJUSTABLE_RES
     newX = CLAMP(newX, camera->minX, camera->maxX - (configDisplayWidth + 1));
     newY = CLAMP(newY, camera->minY, camera->maxY - (configDisplayHeight + 1));
 #else
@@ -646,7 +646,7 @@ void UpdateCamera(void)
 #endif
                 camera->shiftX = playerScreenX - newX;
             } else {
-#if PORTABLE
+#if ADJUSTABLE_RES
                 newX = (camera->unk10 + (configDisplayHeight / 2));
 #else
                 newX = (camera->unk10 + (DISPLAY_HEIGHT / 2));
@@ -686,7 +686,7 @@ void UpdateCamera(void)
             }
         }
 
-#if PORTABLE
+#if ADJUSTABLE_RES
         newY = CLAMP(newY, gBossCameraClampYLower, gBossCameraClampYUpper - configDisplayHeight);
 #else
         newY = CLAMP(newY, gBossCameraClampYLower, gBossCameraClampYUpper - DISPLAY_HEIGHT);
@@ -705,7 +705,7 @@ void UpdateCamera(void)
         } else {
             if (!(camera->unk50 & 1)) {
                 s16 airSpeedX = player->qSpeedAirX;
-#if PORTABLE
+#if ADJUSTABLE_RES
                 camera->unk10 = I(player->qWorldX) + camera->shiftX - (configDisplayWidth / 2);
 #else
                 camera->unk10 = I(player->qWorldX) + camera->shiftX - (DISPLAY_WIDTH / 2);
@@ -735,7 +735,7 @@ void UpdateCamera(void)
                     camera->unk64 = unk64;
                 }
 
-#if PORTABLE
+#if ADJUSTABLE_RES
                 camera->unk14 = I(player->qWorldY) + camera->shiftY - (configDisplayHeight / 2) + camera->unk4C + unk64;
 #else
                 camera->unk14 = I(player->qWorldY) + camera->shiftY - (DISPLAY_HEIGHT / 2) + camera->unk4C + unk64;
@@ -760,7 +760,7 @@ void UpdateCamera(void)
             newX += temp2;
         }
 
-#if PORTABLE
+#if ADJUSTABLE_RES
         newX = CLAMP(newX, camera->minX, camera->maxX - configDisplayWidth);
 #else
         newX = CLAMP(newX, camera->minX, camera->maxX - DISPLAY_WIDTH);
@@ -784,7 +784,7 @@ void UpdateCamera(void)
             newY += (-camera->unkC < (camera->unk14 - newY) + camera->unk48) ? (camera->unk14 - newY) + camera->unk48 : -camera->unkC;
         }
 
-#if PORTABLE
+#if ADJUSTABLE_RES
         newY = CLAMP(newY, camera->minY, camera->maxY - configDisplayHeight);
 
         // maybe a macro, these values are already clamped
@@ -1006,7 +1006,7 @@ NONMATCH("asm/non_matching/game/stage/background/StageBgUpdate_Zone2Acts12.inc",
         dt = gStageTime * 0x18;
 
         // Sky and Clouds
-#if PORTABLE
+#if ADJUSTABLE_RES
         for (i = 0; i < configDisplayHeight - 1; i++) {
 #else
         for (i = 0; i < DISPLAY_HEIGHT - 1; i++) {
@@ -1025,7 +1025,7 @@ NONMATCH("asm/non_matching/game/stage/background/StageBgUpdate_Zone2Acts12.inc",
 
         // Red Bottom
         something = (cameraX >> 3);
-#if PORTABLE
+#if ADJUSTABLE_RES
         for (j = 0; i < configDisplayHeight - 1; i++, j++) {
 #else
         for (j = 0; i < DISPLAY_HEIGHT - 1; i++, j++) {
@@ -1226,7 +1226,7 @@ void StageBgUpdate_Zone3Acts12(s32 cameraX, s32 cameraY)
 
         cursorStack = &sp[sl];
         cursor = (u8 *)gUnknown_080D5B20[sl];
-#if PORTABLE
+#if ADJUSTABLE_RES
         for (i = 0; (u8)i < configDisplayHeight - 1; sp40++, i++) {
 #else
         for (i = 0; (u8)i < DISPLAY_HEIGHT - 1; sp40++, i++) {
@@ -1300,7 +1300,7 @@ void StageBgUpdate_Zone4Acts12(s32 cameraX, s32 cameraY)
     if (IS_SINGLE_PLAYER && !(gStageFlags & STAGE_FLAG__100)) {
         gWinRegs[WINREG_WINOUT] = 0x3e;
         gWinRegs[WINREG_WININ] = 0x3f3f;
-#if PORTABLE
+#if ADJUSTABLE_RES
         gWinRegs[WINREG_WIN0H] = WIN_RANGE(0, configDisplayWidth);
         gWinRegs[WINREG_WIN0V] = WIN_RANGE(0, configDisplayHeight);
         gWinRegs[WINREG_WIN1H] = WIN_RANGE(0, configDisplayWidth);
@@ -1353,7 +1353,7 @@ void CreateStageBg_Zone5(void)
     }
 
     gBgScrollRegs[0][0] = 0;
-#if PORTABLE
+#if ADJUSTABLE_RES
     gBgScrollRegs[0][1] = 160 - configDisplayHeight;
 #else
     gBgScrollRegs[0][1] = 160 - DISPLAY_HEIGHT;
@@ -1400,7 +1400,7 @@ void StageBgUpdate_Zone5Acts12(s32 UNUSED cameraX, s32 UNUSED cameraY)
             gDispCnt |= DISPCNT_WIN0_ON;
             gWinRegs[WINREG_WINOUT] = WINOUT_WIN01_ALL;
             gWinRegs[WINREG_WININ] = (WININ_WIN0_ALL | WININ_WIN1_ALL);
-#if PORTABLE
+#if ADJUSTABLE_RES
             gWinRegs[WINREG_WIN0H] = WIN_RANGE(0, DISPLAY_WIDTH);
             gWinRegs[WINREG_WIN0V] = WIN_RANGE(0, DISPLAY_HEIGHT);
             gWinRegs[WINREG_WIN1H] = WIN_RANGE(0, DISPLAY_WIDTH);
@@ -1460,7 +1460,7 @@ void StageBgUpdate_Zone5Acts12(s32 UNUSED cameraX, s32 UNUSED cameraY)
         // NOTE: Temporary solution to render the bottom of the background in a decent looking way
         gHBlankCopySize = 2 * sizeof(u16);
 
-#if PORTABLE
+#if ADJUSTABLE_RES
         for (i = 0; i < configDisplayHeight - 1; i++) {
             s32 originalLine = (s32)(((float)i / (float)configDisplayHeight) * 160.0f);
 #else
@@ -1631,7 +1631,7 @@ NONMATCH("asm/non_matching/game/stage/background/sub_801D24C.inc", void sub_801D
 
     p1_2 = p1;
 
-#if PORTABLE
+#if ADJUSTABLE_RES
     r6 = (configDisplayWidth - 1) - ((p1_2 * 2) + (p1_2 >> 1));
 
     if (r6 > (configDisplayHeight - 1)) {
@@ -1656,7 +1656,7 @@ NONMATCH("asm/non_matching/game/stage/background/sub_801D24C.inc", void sub_801D
         }
         // _0801D312
 
-#if PORTABLE
+#if ADJUSTABLE_RES
         while (r4 < (configDisplayHeight - 1)) {
 #else
         while (r4 < (DISPLAY_HEIGHT - 1)) {
@@ -1700,7 +1700,7 @@ NONMATCH("asm/non_matching/game/stage/background/sub_801D24C.inc", void sub_801D
 
         // _0801D44C
 
-#if PORTABLE
+#if ADJUSTABLE_RES
         while (r4 < (configDisplayHeight - 1)) {
 #else
         while (r4 < (DISPLAY_HEIGHT - 1)) {
@@ -2047,7 +2047,7 @@ NONMATCH("asm/non_matching/game/stage/background/Zone7BgUpdate_Inside.inc", void
             dst = gBgOffsetsHBlankPrimary;
             dst = ((void *)dst) + (r5 * 4);
 
-#if PORTABLE
+#if ADJUSTABLE_RES
             for (lineY = r5, r2 = 0; ((lineY < configDisplayHeight) && (r2 < 16)); lineY++, r2++) {
 #else
             for (lineY = r5, r2 = 0; ((lineY < DISPLAY_HEIGHT) && (r2 < 16)); lineY++, r2++) {
@@ -2060,7 +2060,7 @@ NONMATCH("asm/non_matching/game/stage/background/Zone7BgUpdate_Inside.inc", void
                 s32 r0 = (80 - lineY) >> 4;
                 r1 = r0;
 
-#if PORTABLE
+#if ADJUSTABLE_RES
                 for (r2 = 0; ((lineY < configDisplayHeight) && (r2 < r1)); lineY++, r2++) {
 #else
                 for (r2 = 0; ((lineY < DISPLAY_HEIGHT) && (r2 < r1)); lineY++, r2++) {
@@ -2110,7 +2110,7 @@ NONMATCH("asm/non_matching/game/stage/background/Zone7BgUpdate_Inside.inc", void
             dst = gBgOffsetsHBlankPrimary;
             dst = ((void *)dst) + (r5 * 4);
 
-#if PORTABLE
+#if ADJUSTABLE_RES
             for (lineY = r5, r2 = 0; ((lineY < configDisplayHeight) && (r2 < 32)); lineY++, r2++) {
 #else
             for (lineY = r5, r2 = 0; ((lineY < DISPLAY_HEIGHT) && (r2 < 32)); lineY++, r2++) {
@@ -2228,7 +2228,7 @@ void Zone7BgUpdate_Outside(s32 x, s32 y)
 #else
         gHBlankCopySize = 2 * sizeof(u16);
 
-#if PORTABLE
+#if ADJUSTABLE_RES
         for (i = 0; i < configDisplayHeight; i++) {
             const s32 gbaHLines = 160;
             s32 originalLine = (s32)(((float)i / (float)configDisplayHeight) * (float)gbaHLines);
@@ -2527,7 +2527,7 @@ void StageBgUpdate_ZoneFinalActTA53(UNUSED s32 a, UNUSED s32 b)
         gHBlankCopySize = 2;
 
         offset = (u16 *)gBgOffsetsHBlankPrimary;
-#if PORTABLE
+#if ADJUSTABLE_RES
         for (y = 0; y < configDisplayHeight - 1; y++) {
 #else
         for (y = 0; y < DISPLAY_HEIGHT - 1; y++) {

@@ -547,9 +547,18 @@ static void InitTitleScreenUI(TitleScreen *titleScreen)
 #else
     // Only display the COPYRIGHT message, not the "Licensed by ***" msg
     // TODO: Split the graphics properly.
+#if ADJUSTABLE_RES
+    s->x = configDisplayWidth - 136;
+#else
     s->x = DISPLAY_WIDTH - 136;
 #endif
+#endif
+
+#if ADJUSTABLE_RES
+    s->y = configDisplayHeight - 30;
+#else
     s->y = DISPLAY_HEIGHT - 30; // set to the screen's bottom
+#endif
     s->graphics.size = 0;
     s->oamFlags = SPRITE_OAM_ORDER(4);
     s->qAnimDelay = 0;
@@ -567,8 +576,14 @@ static void InitTitleScreenUI(TitleScreen *titleScreen)
     s->graphics.anim = gPressStartTiles[language].anim;
     s->variant = gPressStartTiles[language].variant;
     s->prevVariant = -1;
+
+#if ADJUSTABLE_RES
+    s->x = (configDisplayWidth / 2);
+    s->y = (configDisplayHeight / 2) + 30;
+#else
     s->x = (DISPLAY_WIDTH / 2);
     s->y = (DISPLAY_HEIGHT / 2) + 30;
+#endif
     s->graphics.size = 0;
     s->oamFlags = SPRITE_OAM_ORDER(3);
     s->qAnimDelay = 0;
@@ -586,19 +601,36 @@ static void InitTitleScreenUI(TitleScreen *titleScreen)
         s->graphics.anim = sMenuTiles[MenuTextIdx(language, menuItemId)].anim;
         s->variant = sMenuTiles[MenuTextIdx(language, menuItemId)].variant;
         s->prevVariant = -1;
+
+#if ADJUSTABLE_RES
+        s->x = (configDisplayWidth / 2);
+#else
         s->x = (DISPLAY_WIDTH / 2);
+#endif
 
         // Generate menu item y positions
         // position * lineHeight + topPadding
         if (menuItemId < SinglePlayerMenuItem(0)) {
             // PlayModeMenu positions
+#if ADJUSTABLE_RES
+            s->y = (PlayModeMenuIndex(menuItemId) * 18) + (configDisplayHeight / 2) + 16;
+#else
             s->y = (PlayModeMenuIndex(menuItemId) * 18) + (DISPLAY_HEIGHT / 2) + 16;
+#endif
         } else if (gLoadedSaveGame->chaoGardenUnlocked) {
             // SinglePlayerMenu positions if we have the chao garden available
+#if ADJUSTABLE_RES
+            s->y = (SinglePlayerMenuIndex(menuItemId) * 16) + (configDisplayHeight / 2) + 16; 
+#else
             s->y = (SinglePlayerMenuIndex(menuItemId) * 16) + (DISPLAY_HEIGHT / 2) + 16;
+#endif
         } else {
             // SinglePlayerMenu positions if we don't have the chao garden
+#if ADJUSTABLE_RES
+            s->y = (SinglePlayerMenuIndex(menuItemId) * 18) + (configDisplayHeight / 2) + 20;
+#else
             s->y = (SinglePlayerMenuIndex(menuItemId) * 18) + (DISPLAY_HEIGHT / 2) + 20;
+#endif
         }
 
         s->graphics.size = 0;
@@ -615,8 +647,15 @@ static void InitTitleScreenUI(TitleScreen *titleScreen)
     s->graphics.anim = sMenuTiles[ARRAY_COUNT(sMenuTiles) - 1].anim;
     s->variant = sMenuTiles[ARRAY_COUNT(sMenuTiles) - 1].variant;
     s->prevVariant = -1;
+
+#if ADJUSTABLE_RES
+    s->x = (configDisplayWidth / 2);
+    s->y = (configDisplayHeight / 2);
+#else
     s->x = (DISPLAY_WIDTH / 2);
     s->y = (DISPLAY_HEIGHT / 2);
+#endif
+
     s->graphics.size = 0;
     s->oamFlags = SPRITE_OAM_ORDER(30);
     s->qAnimDelay = 0;
@@ -849,8 +888,14 @@ static void Task_IntroPanSkyAnim(void)
         gCurTask->main = Task_IntroSkyAnim;
 
         titleScreen->animFrame = 0;
+
+#if ADJUSTABLE_RES
+        gWinRegs[WINREG_WIN1H] = WIN_RANGE(0, configDisplayWidth);
+        gWinRegs[WINREG_WIN1V] = WIN_RANGE(0, configDisplayHeight);
+#else
         gWinRegs[WINREG_WIN1H] = WIN_RANGE(0, DISPLAY_WIDTH);
         gWinRegs[WINREG_WIN1V] = WIN_RANGE(0, DISPLAY_HEIGHT);
+#endif
         gWinRegs[WINREG_WININ] |= 0x3F00;
         gWinRegs[WINREG_WINOUT] |= 0x3F;
 
@@ -889,8 +934,13 @@ static void Task_IntroSkyAnim(void)
         gDispCnt &= 0xFEFF;
         gDispCnt |= 0x4000;
 
+#if ADJUSTABLE_RES
+        gWinRegs[WINREG_WIN1H] = WIN_RANGE(0, configDisplayWidth);
+        gWinRegs[WINREG_WIN1V] = WIN_RANGE(0, configDisplayHeight);
+#else
         gWinRegs[WINREG_WIN1H] = WIN_RANGE(0, DISPLAY_WIDTH);
         gWinRegs[WINREG_WIN1V] = WIN_RANGE(0, DISPLAY_HEIGHT);
+#endif
         gWinRegs[WINREG_WININ] |= 0x3F00;
         gWinRegs[WINREG_WINOUT] |= 0x3F;
 
@@ -1079,7 +1129,12 @@ static void Task_PlayModeMenuMain(void)
         m4aSongNumStart(SE_SELECT);
 
         if (titleScreen->menuCursor == PlayModeMenuIndex(MENU_ITEM_SINGLE_PLAYER)) {
+
+#if ADJUSTABLE_RES
+            titleScreen->menuItems[MENU_ITEM_MULTI_PLAYER].x = (configDisplayHeight / 2);
+#else
             titleScreen->menuItems[MENU_ITEM_MULTI_PLAYER].x = (DISPLAY_WIDTH / 2);
+#endif
             CreateMenuItemTransition(&titleScreen->menuItems[MENU_ITEM_MULTI_PLAYER], TRANSITION_OUT);
 
             titleScreen->animFrame = SinglePlayerMenuIndex(MENU_ITEM_GAME_START);
@@ -1416,8 +1471,15 @@ static void WavesBackgroundAnim(TitleScreen *titleScreen)
 
     REG_SIOCNT &= ~SIO_INTR_ENABLE;
     gDispCnt |= DISPCNT_WIN1_ON;
+
+#if ADJUSTABLE_RES
+    gWinRegs[WINREG_WIN1H] = WIN_RANGE(0, configDisplayWidth);
+    gWinRegs[WINREG_WIN1V] = WIN_RANGE((titleScreen->wavesTopOffset - 2), configDisplayHeight);
+#else
     gWinRegs[WINREG_WIN1H] = WIN_RANGE(0, DISPLAY_WIDTH);
     gWinRegs[WINREG_WIN1V] = WIN_RANGE((titleScreen->wavesTopOffset - 2), DISPLAY_HEIGHT);
+#endif
+
     gWinRegs[WINREG_WININ] |= 0x3F00;
     gWinRegs[WINREG_WINOUT] &= 0x13;
 
@@ -1442,7 +1504,11 @@ static void WavesBackgroundAnim(TitleScreen *titleScreen)
     // TODO: not sure unk3F4 is the correct type
     gBgOffsetsHBlankPrimary = titleScreen->unk3F4;
     pointer = (void *)titleScreen->unk3F4;
+#if ADJUSTABLE_RES
+    for (i = 0, j = 0; i < configDisplayHeight; i++) {
+#else
     for (i = 0, j = 0; i < DISPLAY_HEIGHT; i++) {
+#endif
         s32 temp, r3;
         if (titleScreen->wavesTopOffset <= i) {
             r3 = titleScreen->wavesTransformX[i - titleScreen->wavesTopOffset];
@@ -1902,7 +1968,12 @@ static void Task_StartTitleScreenDemo(void)
 static void ShowGameLogo(TitleScreen *_)
 {
     // angle, width, height, right, bottom, left, top
+#if ADJUSTABLE_RES
+    sub_8003EE4(0, 0x100, 0x100, 0, 0, (configDisplayWidth / 2) - 100, 8, gBgAffineRegs);
+#else
     sub_8003EE4(0, 0x100, 0x100, 0, 0, (DISPLAY_WIDTH / 2) - 100, 8, gBgAffineRegs);
+#endif
+
 }
 
 static void BirdAnimEnd(void)
