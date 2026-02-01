@@ -249,11 +249,19 @@ static const u16 sWavesBrightnessPalette[] = INCBIN_U16("graphics/80E0EF4.gbapal
 
 // Each value is scan line which the brightness should be increased
 // 0 being top 160 being bottom
+#if ADJUSTABLE_RES
+static const u8 sWavesVerticalBrightnessGradiant[] = {
+    (u8)(0.00000 * 160), (u8)(0.01875 * 160), (u8)(0.05000 * 160), (u8)(0.08750 * 160),
+    (u8)(0.13125 * 160), (u8)(0.20000 * 160), (u8)(0.28750 * 160), (u8)(0.41250 * 160),
+    (u8)(0.60000 * 160), (u8)(1.00000 * 160),
+};
+#else
 static const u8 sWavesVerticalBrightnessGradiant[] = {
     (u8)(0.00000 * DISPLAY_HEIGHT), (u8)(0.01875 * DISPLAY_HEIGHT), (u8)(0.05000 * DISPLAY_HEIGHT), (u8)(0.08750 * DISPLAY_HEIGHT),
     (u8)(0.13125 * DISPLAY_HEIGHT), (u8)(0.20000 * DISPLAY_HEIGHT), (u8)(0.28750 * DISPLAY_HEIGHT), (u8)(0.41250 * DISPLAY_HEIGHT),
     (u8)(0.60000 * DISPLAY_HEIGHT), (u8)(1.00000 * DISPLAY_HEIGHT),
 };
+#endif
 
 static const u8 sPanUpNextVelocityChangeFrame[] = { 60, 19, 10, 10, 255 };
 
@@ -298,6 +306,11 @@ void CreateTitleScreen(void)
     BgPaletteEffectState *bgEffect;
     s32 i, val;
     s16 denom;
+
+#if ADJUSTABLE_RES
+    if (menuResSwitch)
+      SwitchToOriginalResolution();
+#endif
 
     t = TaskCreate(Task_IntroStartSegaLogoAnim, sizeof(TitleScreen), 0x1000, 0, NULL);
     titleScreen = TASK_DATA(t);
@@ -359,11 +372,6 @@ static void CreateTitleScreenWithoutIntro(TitleScreen *titleScreen)
 {
     ScreenFade *fade;
     Background *bg0, *config40;
-
-#if ADJUSTABLE_RES
-    if (menuResSwitch) 
-      SwitchToOriginalResolution();
-#endif
 
     // Size of filler between unk2B4
     // and unkDF4
@@ -672,6 +680,8 @@ static void InitTitleScreenUI(TitleScreen *titleScreen)
 
 static void Task_IntroFadeInSegaLogoAnim(void)
 {
+
+
     TitleScreen *titleScreen = TASK_DATA(gCurTask);
     WavesBackgroundAnim(titleScreen);
 
@@ -1370,11 +1380,6 @@ static void Task_ShowTitleScreenIntroSkipped(void)
     Background *bg0 = &titleScreen->unk0;
     Background *config40;
 
-#if ADJUSTABLE_RES
-    if (menuResSwitch)
-      SwitchToOriginalResolution();
-#endif
-
     DmaFill32(3, 0, (void *)BG_VRAM, BG_VRAM_SIZE);
     INIT_BG_SPRITES_LAYER_32(0);
     INIT_BG_SPRITES_LAYER_32(2);
@@ -1840,13 +1845,13 @@ static void LoadTinyChaoGarden(void)
 
 void CreateTitleScreenAndSkipIntro(void)
 {
-#if ADJUSTABLE_RES
-    if (menuResSwitch) 
-      SwitchToOriginalResolution();
-#endif
-
     struct Task *t;
     REG_SIOCNT |= SIO_INTR_ENABLE;
+
+#if ADJUSTABLE_RES
+    if (menuResSwitch)
+      SwitchToOriginalResolution();
+#endif
 
     t = TaskCreate(Task_ShowPressStartMenu, sizeof(TitleScreen), 0x1000, 0, 0);
     CreateTitleScreenWithoutIntro(TASK_DATA(t));
@@ -1875,6 +1880,11 @@ static void SkipIntro(TitleScreen *titleScreen)
     ScreenFade *fade = &titleScreen->unk270;
     gFlags &= ~FLAGS_EXECUTE_HBLANK_COPY;
 
+#if ADJUSTABLE_RES
+    if (menuResSwitch)
+      SwitchToOriginalResolution();
+#endif
+
     fade->window = 1;
     fade->brightness = 0;
     fade->flags = 2;
@@ -1894,11 +1904,6 @@ static void Task_ShowPressStartMenu(void)
 {
     TitleScreen *titleScreen = TASK_DATA(gCurTask);
 
-#if ADJUSTABLE_RES
-    if (menuResSwitch)
-      SwitchToOriginalResolution();
-#endif
-
     DisplaySprite(&titleScreen->unkC0);
     ShowGameLogo(titleScreen);
 
@@ -1913,11 +1918,6 @@ static void Task_IntroStartSegaLogoAnim(void)
 {
     TitleScreen *titleScreen = TASK_DATA(gCurTask);
     WavesBackgroundAnim(titleScreen);
-
-#if ADJUSTABLE_RES
-    if (menuResSwitch) 
-      SwitchToOriginalResolution();
-#endif
 
     if (UpdateScreenFade(&titleScreen->unk270) == SCREEN_FADE_COMPLETE) {
         gCurTask->main = Task_IntroFadeInSegaLogoAnim;
