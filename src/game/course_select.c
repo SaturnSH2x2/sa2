@@ -44,10 +44,15 @@ struct CourseSelectionScreen {
 };
 
 #define UNITS_PER_PIXEL  256
-#define CAMERA_FOV_WIDTH (DISPLAY_WIDTH * UNITS_PER_PIXEL)
-
 #define MIN_CAMERA_SCROLL_X 0
+
+#if ADJUSTABLE_RES
+static int CAMERA_FOV_WIDTH;
+static int MAX_CAMERA_SCROLL_X;
+#else
+#define CAMERA_FOV_WIDTH (DISPLAY_WIDTH * UNITS_PER_PIXEL)
 #define MAX_CAMERA_SCROLL_X (DISPLAY_WIDTH * UNITS_PER_PIXEL)
+#endif
 
 #define CAM_MAX_X_SPEED        (UNITS_PER_PIXEL * 3)
 #define ZONE_NAME_SCROLL_SPEED (0x10)
@@ -226,6 +231,13 @@ static const u8 sCourseIndexToLevelIndex[] = {
     })
 
 // Text scrolls in from the right, so take that as base for pixel value
+#if ADJUSTABLE_RES
+void ScrollInZoneName(Sprite* s, int speed) {
+  s->x -= speed;
+  if (s->x < currentDisplayWidth - 160)
+    s->x = currentDisplayWidth - 160;
+}
+#else
 #define CS_LOCAL_ZONE_TEXT_X (DISPLAY_WIDTH - 160)
 #define ScrollInZoneName(s, speed)                                                                                                         \
     ({                                                                                                                                     \
@@ -234,6 +246,7 @@ static const u8 sCourseIndexToLevelIndex[] = {
             (s)->x = CS_LOCAL_ZONE_TEXT_X;                                                                                                 \
         }                                                                                                                                  \
     })
+#endif
 
 void CreateCourseSelectionScreen(u8 currentLevel, u8 maxLevel, u8 cutScenes)
 {
@@ -424,7 +437,11 @@ void CreateCourseSelectionScreen(u8 currentLevel, u8 maxLevel, u8 cutScenes)
 
     for (i = 0; i < ARRAY_COUNT(coursesScreen->zoneActUnits); i++) {
         s = &coursesScreen->zoneActUnits[i];
+#if ADJUSTABLE_RES
+        s->x = i * 32 + (currentDisplayWidth - 56);
+#else
         s->x = i * 32 + (DISPLAY_WIDTH - 56);
+#endif
         s->y = 0;
         s->graphics.dest = VramMalloc(4);
         s->graphics.anim = SA2_ANIM_758;
@@ -442,7 +459,11 @@ void CreateCourseSelectionScreen(u8 currentLevel, u8 maxLevel, u8 cutScenes)
     }
 
     s = &coursesScreen->zoneType;
+#if ADJUSTABLE_RES
+    s->x = currentDisplayWidth - 112;
+#else
     s->x = DISPLAY_WIDTH - 112;
+#endif
     s->y = 0;
     s->graphics.dest = VramMalloc(0x1A);
     s->graphics.anim = 0x2F5;
@@ -459,7 +480,11 @@ void CreateCourseSelectionScreen(u8 currentLevel, u8 maxLevel, u8 cutScenes)
     UpdateSpriteAnimation(s);
 
     s = &coursesScreen->zoneName;
+#if ADJUSTABLE_RES
+    s->x = currentDisplayWidth;
+#else
     s->x = DISPLAY_WIDTH;
+#endif
     s->y = 24;
     s->graphics.dest = VramMalloc(0x26);
     s->graphics.anim = 0x2F9;
@@ -517,7 +542,11 @@ void CreateCourseSelectionScreen(u8 currentLevel, u8 maxLevel, u8 cutScenes)
     for (i = 0; i < ARRAY_COUNT(coursesScreen->chaosEmeralds); i++) {
         s = &coursesScreen->chaosEmeralds[i];
         s->x = 0;
+#if ADJUSTABLE_RES
+        s->y = currentDisplayHeight - 24;
+#else
         s->y = DISPLAY_HEIGHT - 24;
+#endif
         s->graphics.dest = (void *)OBJ_VRAM0 + (i * (9 * TILE_SIZE_4BPP));
         s->graphics.anim = sChaoEmeraldAssets[i][0];
         s->variant = sChaoEmeraldAssets[i][1];
@@ -535,6 +564,11 @@ void CreateCourseSelectionScreen(u8 currentLevel, u8 maxLevel, u8 cutScenes)
 
 static void Task_FadeInIntro(void)
 {
+#if ADJUSTABLE_RES
+    CAMERA_FOV_WIDTH = (currentDisplayWidth * UNITS_PER_PIXEL);
+    MAX_CAMERA_SCROLL_X = (currentDisplayWidth * UNITS_PER_PIXEL);
+#endif
+
     struct CourseSelectionScreen *coursesScreen = TASK_DATA(gCurTask);
     SetCameraScrollX(coursesScreen, coursesScreen->cameraScrollX + CAM_MAX_X_SPEED);
 
@@ -598,7 +632,11 @@ static void Task_UnlockCutSceneNewPathAnim(void)
     animDone = AnimateNewZonePath(coursesScreen);
     if (animDone) {
         gCurTask->main = Task_UnlockCutSceneScrollAnim;
+#if ADJUSTABLE_RES
+        zoneName->x = currentDisplayWidth;
+#else
         zoneName->x = DISPLAY_WIDTH;
+#endif
         coursesScreen->zonePathsUnlocked++;
         coursesScreen->maxCourse++;
     }
@@ -677,7 +715,11 @@ static void Task_CourseSelectMain(void)
             if (coursesScreen->currentCourse > 0) {
                 if (COURSE_INDEX_TO_ACT_INDEX(coursesScreen->currentCourse) == 0
                     || coursesScreen->currentCourse > COURSE_INDEX(ZONE_7, ACT_2)) {
+#if ADJUSTABLE_RES
+                    zoneName->x = currentDisplayWidth;
+#else
                     zoneName->x = DISPLAY_WIDTH;
+#endif
                 }
                 coursesScreen->zoneNameAnimFrame = 0;
                 coursesScreen->currentCourse--;
@@ -688,7 +730,11 @@ static void Task_CourseSelectMain(void)
             if (coursesScreen->currentCourse < coursesScreen->maxCourse) {
                 if (COURSE_INDEX_TO_ACT_INDEX(coursesScreen->currentCourse) == 1
                     || coursesScreen->currentCourse > COURSE_INDEX(ZONE_7, ACT_2)) {
+#if ADJUSTABLE_RES
+                    zoneName->x = currentDisplayWidth;
+#else
                     zoneName->x = DISPLAY_WIDTH;
+#endif
                 }
                 coursesScreen->zoneNameAnimFrame = 0;
                 coursesScreen->currentCourse++;
@@ -978,7 +1024,12 @@ static void RenderUI(struct CourseSelectionScreen *coursesScreen)
             } else {
                 s = &coursesScreen->chaosEmeralds[0];
             }
+
+#if ADJUSTABLE_RES
+            s->x = (((i * 3)) * 8) + ((currentDisplayWidth / 2) - 84);
+#else
             s->x = (((i * 3)) * 8) + ((DISPLAY_WIDTH / 2) - 84);
+#endif
             UpdateSpriteAnimation(s);
             DisplaySprite(s);
         }

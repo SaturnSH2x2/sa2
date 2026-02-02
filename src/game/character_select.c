@@ -1446,7 +1446,12 @@ static void RenderCarouselScrollAnim(struct CharacterSelectionScreen *characterS
 #endif
 
     s = &characterScreen->screenTitleText;
+
+#if ADJUSTABLE_RES
+    s->x = currentDisplayWidth;
+#else
     s->x = DISPLAY_WIDTH;
+#endif
     s->y = 16;
     DisplaySprite(s);
 

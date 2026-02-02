@@ -25,9 +25,15 @@ typedef struct {
     /* 0x170 */ bool8 isCountingDone;
 } StageResults; /* size: 0x174 */
 
+#if ADJUSTABLE_RES
+int OUTRO_TIME_BONUS_Y_POS;
+int OUTRO_RING_BONUS_Y_POS;
+int OUTRO_SP_RING_BONUS_Y_POS;
+#else
 #define OUTRO_TIME_BONUS_Y_POS    (DISPLAY_HEIGHT / 2) + 10
 #define OUTRO_RING_BONUS_Y_POS    (DISPLAY_HEIGHT / 2) + 30
 #define OUTRO_SP_RING_BONUS_Y_POS (DISPLAY_HEIGHT / 2) + 50
+#endif
 
 static void Task_UpdateStageResults(void);
 static void TaskDestructor_StageResults(struct Task *);
@@ -73,6 +79,12 @@ u16 CreateStageResults(u32 courseTime, u16 ringCount, u8 spRingCount)
     StageResults *outro;
     Sprite *s;
     u8 i;
+
+#if ADJUSTABLE_RES
+  OUTRO_TIME_BONUS_Y_POS = (currentDisplayHeight / 2) + 10;
+  OUTRO_RING_BONUS_Y_POS = (currentDisplayHeight / 2) + 30;
+  OUTRO_SP_RING_BONUS_Y_POS = (currentDisplayHeight / 2) + 50;
+#endif
 
 #ifndef NON_MATCHING
     register u32 zero asm("r7") = 0;
@@ -148,8 +160,14 @@ u16 CreateStageResults(u32 courseTime, u16 ringCount, u8 spRingCount)
     }
 
     s = &outro->base.separator;
+
+#if ADJUSTABLE_RES
+    s->x = currentDisplayWidth + 16;
+    s->y = currentDisplayHeight / 2;
+#else
     s->x = DISPLAY_WIDTH + 16;
     s->y = (DISPLAY_HEIGHT / 2);
+#endif
     s->graphics.dest = VramMalloc(4);
     s->graphics.anim = SA2_ANIM_TA_WHITE_BAR;
     s->variant = 0;
@@ -165,8 +183,13 @@ u16 CreateStageResults(u32 courseTime, u16 ringCount, u8 spRingCount)
     UpdateSpriteAnimation(s);
 
     s = &outro->base.title[0];
+#if ADJUSTABLE_RES
+    s->x = currentDisplayWidth + 16;
+    s->y = (currentDisplayHeight / 2) - 39;
+#else
     s->x = DISPLAY_WIDTH + 16;
     s->y = (DISPLAY_HEIGHT / 2) - 39;
+#endif
     s->graphics.dest = VramMalloc(gAnimsGotThroughCharacterNames[gSelectedCharacter][0]);
     s->graphics.anim = gAnimsGotThroughCharacterNames[gSelectedCharacter][1];
     s->variant = gAnimsGotThroughCharacterNames[gSelectedCharacter][2];
@@ -187,8 +210,13 @@ u16 CreateStageResults(u32 courseTime, u16 ringCount, u8 spRingCount)
         bool32 isBossAct = ACT_INDEX(gCurrentLevel) >> 1;
 
         s = &outro->base.title[1];
+#if ADJUSTABLE_RES
+        s->x = currentDisplayWidth + 16;
+        s->y = (currentDisplayHeight / 2) - 31;
+#else
         s->x = DISPLAY_WIDTH + 16;
         s->y = (DISPLAY_HEIGHT / 2) - 31;
+#endif
         s->graphics.dest = VramMalloc(gStageResultsHeadlineTexts[isBossAct][0]);
         s->graphics.anim = gStageResultsHeadlineTexts[isBossAct][1];
         s->variant = gStageResultsHeadlineTexts[isBossAct][2];
@@ -218,8 +246,13 @@ u16 CreateStageResults(u32 courseTime, u16 ringCount, u8 spRingCount)
         }
 
         s = &outro->base.title[2];
+#if ADJUSTABLE_RES
+        s->x = currentDisplayWidth + 16;
+        s->y = (currentDisplayHeight / 2) - 31;
+#else
         s->x = DISPLAY_WIDTH + 16;
         s->y = (DISPLAY_HEIGHT / 2) - 31;
+#endif
         s->graphics.dest = VramMalloc(gAnimsGotThroughZoneAndActNames[level][0]);
         s->graphics.anim = gAnimsGotThroughZoneAndActNames[level][1];
         s->variant = gAnimsGotThroughZoneAndActNames[level][2];
@@ -246,8 +279,13 @@ u16 CreateStageResults(u32 courseTime, u16 ringCount, u8 spRingCount)
 
     for (i = 0; i < ARRAY_COUNT(outro->base.sprScores); i++) {
         s = &outro->base.sprScores[i];
+#if ADJUSTABLE_RES
+        s->x = currentDisplayWidth + 16;
+        s->y = ((currentDisplayHeight / 2) - 6) + i * 20;
+#else
         s->x = DISPLAY_WIDTH + 16;
         s->y = ((DISPLAY_HEIGHT / 2) - 6) + i * 20;
+#endif
         s->graphics.dest = VramMalloc(sStageScoreBonusesTexts[i][0]);
         s->graphics.anim = sStageScoreBonusesTexts[i][1];
         s->variant = sStageScoreBonusesTexts[i][2];
@@ -443,8 +481,13 @@ static void Task_UpdateStageResults(void)
                         CreateSpecialStage(-1, -1);
 
                         gDispCnt |= DISPCNT_WIN0_ON;
+#if ADJUSTABLE_RES
+                        gWinRegs[WINREG_WIN0H] = WIN_RANGE(0, currentDisplayWidth);
+                        gWinRegs[WINREG_WIN0V] = WIN_RANGE(0, currentDisplayHeight);
+#else
                         gWinRegs[WINREG_WIN0H] = WIN_RANGE(0, DISPLAY_WIDTH);
                         gWinRegs[WINREG_WIN0V] = WIN_RANGE(0, DISPLAY_HEIGHT);
+#endif
                         gWinRegs[WINREG_WININ] |= WININ_WIN0_ALL;
                         gWinRegs[WINREG_WINOUT] |= (WINOUT_WIN01_ALL & ~WINOUT_WIN01_CLR);
 
@@ -502,9 +545,17 @@ void StageResults_AnimateSeparator(void)
 
     if (counter <= 15) {
         s->x = (16 - counter) * 15;
+#if ADJUSTABLE_RES
+        s->y = (currentDisplayHeight / 2) + 20;
+#else
         s->y = (DISPLAY_HEIGHT / 2) + 20;
+#endif
     } else if (counter <= 23) {
+#if ADJUSTABLE_RES
+        s->y = (currentDisplayHeight / 2) + 20;
+#else
         s->y = (DISPLAY_HEIGHT / 2) + 20;
+#endif
     } else if (counter <= 28) {
         s->y -= 7;
     }
@@ -527,14 +578,22 @@ static void AnimateResults(u16 frame)
             x = (16 - counter) * 24;
         }
 
+#if ADJUSTABLE_RES
+        for (i = 0; i < ((currentDisplayWidth + 32) / 32); i++) {
+#else
         for (i = 0; i < ((DISPLAY_WIDTH + 32) / 32); i++) {
+#endif
             s->x = (x - frame) + i * 32;
             DisplaySprite(s);
         }
     } else {
         s = &outro->base.separator;
 
+#if ADJUSTABLE_RES
+        for (i = 0; i < ((currentDisplayWidth + 32) / 32); i++) {
+#else
         for (i = 0; i < ((DISPLAY_WIDTH + 32) / 32); i++) {
+#endif
             s->x = -frame + i * 32;
             DisplaySprite(s);
         }
@@ -555,10 +614,18 @@ static void AnimateResults(u16 frame)
         s = &outro->base.sprScores[0];
 
         if (counter < 56) {
+#if ADJUSTABLE_RES
+            u16 innerX = currentDisplayWidth - ((counter - 39) * 12);
+#else
             u16 innerX = DISPLAY_WIDTH - ((counter - 39) * 12);
+#endif
             r4 = innerX;
         } else {
+#if ADJUSTABLE_RES
+            r4 = (currentDisplayWidth / 2) - 72;
+#else
             r4 = (DISPLAY_WIDTH / 2) - 72;
+#endif
         }
         s->x = r4 - frame;
         DisplaySprite(s);
@@ -574,10 +641,18 @@ static void AnimateResults(u16 frame)
         s = &outro->base.sprScores[1];
 
         if (counter <= 65) {
+#if ADJUSTABLE_RES
+            u16 innerX = currentDisplayHeight - ((counter - 49) * 12);
+#else
             u16 innerX = DISPLAY_WIDTH - ((counter - 49) * 12);
+#endif
             r4 = innerX;
         } else {
+#if ADJUSTABLE_RES
+            r4 = (currentDisplayWidth / 2) - 72;
+#else
             r4 = (DISPLAY_WIDTH / 2) - 72;
+#endif
         }
         s->x = r4 - frame;
         DisplaySprite(s);
@@ -593,10 +668,18 @@ static void AnimateResults(u16 frame)
         s = &outro->base.sprScores[2];
 
         if (counter <= 75) {
+#if ADJUSTABLE_RES
+            u16 innerX = currentDisplayWidth - ((counter - 59) * 12);
+#else
             u16 innerX = DISPLAY_WIDTH - ((counter - 59) * 12);
+#endif
             r4 = innerX;
         } else {
+#if ADJUSTABLE_RES
+            r4 = (currentDisplayWidth / 2) - 72;
+#else
             r4 = (DISPLAY_WIDTH / 2) - 72;
+#endif
         }
 
         s->x = r4 - frame;
@@ -618,11 +701,19 @@ void StageResults_AnimateTitle(void)
     if (counter > 28) {
         u32 x;
 
+#if ADJUSTABLE_RES
+        if (counter < 45) {
+            x = (u16)(currentDisplayWidth - ((counter - 29) * 15));
+        } else {
+            x = (currentDisplayWidth / 2) - 117;
+        }
+#else
         if (counter < 45) {
             x = (u16)(DISPLAY_WIDTH - ((counter - 29) * 15));
         } else {
             x = (DISPLAY_WIDTH / 2) - 117;
         }
+#endif
 
         {
             s32 i = 0;

@@ -1146,7 +1146,7 @@ static void Task_PlayModeMenuMain(void)
         if (titleScreen->menuCursor == PlayModeMenuIndex(MENU_ITEM_SINGLE_PLAYER)) {
 
 #if ADJUSTABLE_RES
-            titleScreen->menuItems[MENU_ITEM_MULTI_PLAYER].x = (currentDisplayHeight / 2);
+            titleScreen->menuItems[MENU_ITEM_MULTI_PLAYER].x = (currentDisplayWidth / 2);
 #else
             titleScreen->menuItems[MENU_ITEM_MULTI_PLAYER].x = (DISPLAY_WIDTH / 2);
 #endif

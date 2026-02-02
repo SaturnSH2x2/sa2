@@ -281,12 +281,16 @@ const u16 sZoneLoadingCharacterColors[NUM_CHARACTERS] = {
     [CHARACTER_KNUCKLES] = RGB16(31, 3, 0), [CHARACTER_AMY] = RGB16(31, 17, 21),
 };
 
+#if ADJUSTABLE_RES
+u16 sScreenPositions_ZoneLoadingActLetters[4][2];
+#else
 const u16 sScreenPositions_ZoneLoadingActLetters[4][2] = {
     { DISPLAY_WIDTH - 108, DISPLAY_HEIGHT - 63 }, // A
     { DISPLAY_WIDTH - 87, DISPLAY_HEIGHT - 59 }, // C
     { DISPLAY_WIDTH - 66, DISPLAY_HEIGHT - 55 }, // T
     { DISPLAY_WIDTH - 44, DISPLAY_HEIGHT - 51 }, // 1|2
 };
+#endif
 
 const s16 gUnknown_080D7130[6] = { 10, -8, 6, -4, 2, 0 };
 
@@ -349,6 +353,17 @@ struct Task *SetupStageIntro(void)
     void *tilesCursor;
     Sprite *s;
     u8 i; // r7
+
+#if ADJUSTABLE_RES
+    sScreenPositions_ZoneLoadingActLetters[0][0] = currentDisplayWidth - 108;
+    sScreenPositions_ZoneLoadingActLetters[0][1] = currentDisplayHeight - 63;
+    sScreenPositions_ZoneLoadingActLetters[1][0] = currentDisplayWidth - 87; 
+    sScreenPositions_ZoneLoadingActLetters[1][1] = currentDisplayHeight - 59;
+    sScreenPositions_ZoneLoadingActLetters[2][0] = currentDisplayWidth - 66;
+    sScreenPositions_ZoneLoadingActLetters[2][1] = currentDisplayHeight - 55;
+    sScreenPositions_ZoneLoadingActLetters[3][0] = currentDisplayWidth - 44;
+    sScreenPositions_ZoneLoadingActLetters[3][1] = currentDisplayHeight - 51;
+#endif
 
     gStageFlags |= STAGE_FLAG__ACT_START;
     gStageFlags |= STAGE_FLAG__100;
@@ -805,10 +820,18 @@ static void Task_802F9F8(void)
         gBldRegs.bldCnt = 0;
         gBldRegs.bldAlpha = 0;
 
+#if ADJUSTABLE_RES
+        gWinRegs[WINREG_WIN0H] = WIN_RANGE(currentDisplayWidth, currentDisplayHeight);
+        gWinRegs[WINREG_WIN0V] = WIN_RANGE(currentDisplayWidth, currentDisplayHeight);
+        gWinRegs[WINREG_WIN1H] = WIN_RANGE(currentDisplayWidth, currentDisplayHeight);
+        gWinRegs[WINREG_WIN1V] = WIN_RANGE(currentDisplayWidth, currentDisplayHeight);
+#else
         gWinRegs[WINREG_WIN0H] = WIN_RANGE(DISPLAY_WIDTH, DISPLAY_WIDTH);
         gWinRegs[WINREG_WIN0V] = WIN_RANGE(DISPLAY_HEIGHT, DISPLAY_HEIGHT);
         gWinRegs[WINREG_WIN1H] = WIN_RANGE(DISPLAY_WIDTH, DISPLAY_WIDTH);
         gWinRegs[WINREG_WIN1V] = WIN_RANGE(DISPLAY_HEIGHT, DISPLAY_HEIGHT);
+#endif
+
         gWinRegs[WINREG_WININ] = 0;
         gWinRegs[WINREG_WINOUT] = 0;
 
@@ -847,14 +870,23 @@ static void Task_IntroColorAnimation(void)
         u32 innerCount = counter - INTROFRAME_VISIBLE;
 
         mask1->angle = DEG_TO_SIN(0);
+#if ADJUSTABLE_RES
+        mask1->y = currentDisplayHeight;
+#else
         mask1->y = DISPLAY_HEIGHT;
+#endif
         mask2->angle = DEG_TO_SIN(180);
         mask2->y = 0;
 
         if (innerCount < INTROFRAME_NAME_AND_BANNER) {
             /* Bottom left */
+#if ADJUSTABLE_RES
+            mask1->angle = -(innerCount * (currentDisplayWidth / INTROFRAME_NAME_AND_BANNER)) + (currentDisplayHeight + DEG_TO_SIN(5.625));
+            mask1->y = (currentDisplayWidth / 2) + 8;
+#else
             mask1->angle = -(innerCount * (DISPLAY_WIDTH / INTROFRAME_NAME_AND_BANNER)) + (DISPLAY_WIDTH + DEG_TO_SIN(5.625));
             mask1->y = (DISPLAY_HEIGHT / 2) + 8;
+#endif
 
             if (innerCount >= INTROFRAME_BANNER_APPEARS) {
                 /* Top Banner */
@@ -867,7 +899,11 @@ static void Task_IntroColorAnimation(void)
             /* Keep the Bottom-Left Triangle and Banner on-screen until 2 seconds have
              * passed (and stage name + all icons left the screen) */
             mask1->angle = DEG_TO_SIN(190.546875);
+#if ADJUSTABLE_RES
+            mask1->y = currentDisplayHeight - 23;
+#else
             mask1->y = DISPLAY_HEIGHT - 23;
+#endif
             mask2->angle = DEG_TO_SIN(180);
             mask2->y = 16;
         } else if (counter < INTROFRAME_CLEAR_BANNER) {
@@ -875,7 +911,11 @@ static void Task_IntroColorAnimation(void)
             innerCount = counter - INTROFRAME_PAUSE_ON_BANNER;
 
             mask1->angle = DEG_TO_SIN(190.546875) - (innerCount * DEG_TO_SIN(6.328125));
+#if ADJUSTABLE_RES
+            mask1->y = (innerCount * 2) + (currentDisplayHeight - 23);
+#else
             mask1->y = -(innerCount * 2) + (DISPLAY_HEIGHT - 23);
+#endif
             mask2->angle = DEG_TO_SIN(180) - (innerCount * DEG_TO_SIN(5.625));
             mask2->y = counter - 104;
         } else if (counter >= INTROFRAME_FADE_GAMEPLAY) {
@@ -890,7 +930,11 @@ static void Task_IntroColorAnimation(void)
              * highlights the Act's name */
             innerCount = counter - INTROFRAME_CLEAR_BANNER;
             mask1->angle = DEG_TO_SIN(191.25) - (innerCount * DEG_TO_SIN(2.109375));
+#if ADJUSTABLE_RES
+            mask1->y = innerCount * ((currentDisplayHeight - 62) / 14);
+#else
             mask1->y = innerCount * ((DISPLAY_HEIGHT - 62) / 14);
+#endif
             mask2->angle = 0;
         }
     }
@@ -1000,8 +1044,13 @@ static void Task_IntroZoneNameAndIconAnimations(void)
                 s->variant = sColoredTriangle[gSelectedCharacter].variant;
                 s->palId = 0;
                 s->prevVariant = -1;
+#if ADJUSTABLE_RES
+                s->x = currentDisplayWidth;
+                s->y = currentDisplayHeight;
+#else
                 s->x = DISPLAY_WIDTH;
                 s->y = DISPLAY_HEIGHT;
+#endif
                 s->frameFlags = SPRITE_FLAG(PRIORITY, 0);
             } else if (counter >= 190) {
                 s->x += 4;
@@ -1021,17 +1070,29 @@ static void Task_IntroZoneNameAndIconAnimations(void)
 
     if (counter <= 12) {
         s->x = 254 - (((counter * 75) << 6) >> 8);
+#if ADJUSTABLE_RES
+        s->y = ((currentDisplayHeight / 2) + 41) - (((counter * 123) << 3) >> 8);
+#else
         s->y = ((DISPLAY_HEIGHT / 2) + 41) - (((counter * 123) << 3) >> 8);
+#endif
 
     } else if (counter <= 100) {
         // _08030078
         s->x = 254 - (((13 * 75) << 6) >> 8) + 13;
+#if ADJUSTABLE_RES
+        s->y = ((currentDisplayHeight / 2) + 41) - (((13 * 123) << 3) >> 8) + 2;
+#else
         s->y = ((DISPLAY_HEIGHT / 2) + 41) - (((13 * 123) << 3) >> 8) + 2;
+#endif
     } else {
         // _08030086
         u32 innerCount = counter - (100 - 12);
         s->x = 254 - (((innerCount * 75) << 6) >> 8);
+#if ADJUSTABLE_RES
+        s->y = ((currentDisplayHeight / 2) + 41) - (((innerCount * 123) << 3) >> 8);
+#else
         s->y = ((DISPLAY_HEIGHT / 2) + 41) - (((innerCount * 123) << 3) >> 8);
+#endif
     }
 
     // _080300AE
@@ -1040,13 +1101,25 @@ static void Task_IntroZoneNameAndIconAnimations(void)
 
         if (counter <= 12) {
             s->x = 284 - (((counter * 75) << 6) >> 8);
+#if ADJUSTABLE_RES
+            s->y = ((currentDisplayHeight / 2) + 47) - (((counter * 123) << 3) >> 8);
+#else
             s->y = ((DISPLAY_HEIGHT / 2) + 47) - (((counter * 123) << 3) >> 8);
+#endif
         } else if (counter <= 100) {
             s->x = 284 - (((13 * 75) << 6) >> 8) + 13;
+#if ADJUSTABLE_RES
+            s->y = ((currentDisplayHeight / 2) + 47) - (((13 * 123) << 3) >> 8) + 2;
+#else
             s->y = ((DISPLAY_HEIGHT / 2) + 47) - (((13 * 123) << 3) >> 8) + 2;
+#endif
         } else {
             s->x = 284 - ((((counter - (100 - 12)) * 75) << 6) >> 8);
+#if ADJUSTABLE_RES
+            s->y = ((currentDisplayHeight / 2) + 47) - ((((counter - (100 - 12)) * 123) << 3) >> 8);
+#else
             s->y = ((DISPLAY_HEIGHT / 2) + 47) - ((((counter - (100 - 12)) * 123) << 3) >> 8);
+#endif
         }
         // _0803012A
 
@@ -1069,8 +1142,13 @@ static void Task_IntroZoneNameAndIconAnimations(void)
         lastIconIndex = ((ARRAY_COUNT(introUI->sprUnlockedIcons) - 1) - i);
         s = &introUI->sprUnlockedIcons[lastIconIndex];
 
+#if ADJUSTABLE_RES
+        x = (currentDisplayWidth - (ARRAY_COUNT(introUI->sprUnlockedIcons) * 17) - ((ARRAY_COUNT(introUI->sprUnlockedIcons) + 1) * 2))
+            + lastIconIndex * 17;
+#else
         x = (DISPLAY_WIDTH - (ARRAY_COUNT(introUI->sprUnlockedIcons) * 17) - ((ARRAY_COUNT(introUI->sprUnlockedIcons) + 1) * 2))
             + lastIconIndex * 17;
+#endif
         s->x = x;
 
         y = -22;

@@ -81,8 +81,13 @@ void CreatePauseMenu(void)
             s->animSpeed = 0x10;
             s->palId = 0;
 
+#if ADJUSTABLE_RES
+            s->x = (currentDisplayWidth / 2);
+            s->y = (currentDisplayHeight / 2);
+#else
             s->x = (DISPLAY_WIDTH / 2);
             s->y = (DISPLAY_HEIGHT / 2);
+#endif
 
             s->frameFlags = 0;
 
